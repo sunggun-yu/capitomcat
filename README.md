@@ -1,6 +1,8 @@
 Capistrano Recipe for Tomcat
 ========================
 
+https://rubygems.org/gems/capitomcat
+
 ##Installation
 To use Capitomcat in your Capistrano script, you need install as RubyGem
 
