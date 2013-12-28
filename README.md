@@ -14,6 +14,12 @@ $ gem install capistrano
 $ gem install capistrano-ext
 </pre>
 ###Install Capitomcat
+####Install from RubyGems
+<pre>
+$ gem install capitomcat
+</pre>
+
+####Install manually
 * Check-out the source code
 <pre>
 $ git clone git@github.com:sunggun-yu/capitomcat.git
