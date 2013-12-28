@@ -1,0 +1,37 @@
+# CVS Files #
+.cvsignore
+CVS
+
+# Eclipse Project Files #
+.settings
+target
+.classpath
+.project
+
+# Intellij Project Files #
+.idea
+*.iml
+
+# Mac Directory #
+.DS_Store
+
+# Ruby
+*.gem
+*.rbc
+.bundle
+.config
+coverage
+InstalledFiles
+lib/bundler/man
+pkg
+rdoc
+spec/reports
+test/tmp
+test/version_tmp
+tmp
+
+# YARD artifacts
+.yardoc
+_yardoc
+doc/
+

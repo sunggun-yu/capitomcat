@@ -1,0 +1,24 @@
+# Author:: Sunggun Yu
+
+require 'capistrano/ext/multistage'
+load 'config/deploy.rb'
+
+# Application Stage Section
+set :stages, %w(dev stg prod)
+
+# User section
+set   :user, "deploy"
+set   :password, "#{password}" #Set password from parameter.
+set   :tomcat_user, "tomcat"
+set   :tomcat_cmd_user, "root"
+
+# Local file section
+set   :local_war_file, "/tmp/app.war"
+set   :context_template_file, "./template/context.xml.erb"
+
+# Remote setting section
+set   :context_name, "app"
+set   :remote_docBase, "/tmp/test/earl/war/abc.war"
+set   :remote_context_file, "/tmp/test/tomcat/conf/Catalina/localhost/app.xml"
+set   :remote_tomcat_cmd, "/tmp/test/etc/init.d/tomcat7"
+set   :remote_tomcat_work_dir, "/opt/tomcat/work/Catalina/localhost/app"
