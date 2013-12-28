@@ -6,18 +6,19 @@ load 'config/deploy.rb'
 role  :app, "dev01"
 
 # User section
-set   :user, "deploy"
+set   :user, "user"
 set   :password, "#{password}" #Set password from parameter.
-set   :tomcat_user, "tomcat"
+set   :tomcat_user, "root"
 set   :tomcat_cmd_user, "root"
+set   :tomcat_port, "8080"
 
 # Local file section
-set   :local_war_file, "/tmp/app.war"
+set   :local_war_file, "/your-local-directory/app.war"
 set   :context_template_file, "./template/context.xml.erb"
 
 # Remote setting section
 set   :context_name, "app"
-set   :remote_docBase, "/tmp/test/earl/war/abc.war"
-set   :remote_context_file, "/tmp/test/tomcat/conf/Catalina/localhost/app.xml"
-set   :remote_tomcat_cmd, "/tmp/test/etc/init.d/tomcat7"
-set   :remote_tomcat_work_dir, "/opt/tomcat/work/Catalina/localhost/app"
+set(  :remote_docBase) {"/your-remote-directory-to-save-war-file/"+File.basename(local_war_file)} unless exists?(:remote_docBase)
+set   :remote_context_file, "/var/lib/tomcat7/conf/Catalina/localhost/app.xml"
+set   :remote_tomcat_cmd, "/etc/init.d/tomcat7"
+set   :remote_tomcat_work_dir, "/var/lib/tomcat7/work/Catalina/localhost/app"
