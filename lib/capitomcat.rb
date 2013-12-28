@@ -21,7 +21,7 @@ configuration.load do
     desc "Start Tomcat"
     task :start, :roles => :app do
       run "echo `nohup #{sudo :as => tomcat_cmd_user} #{remote_tomcat_cmd} start&` && sleep 1", :pty => true
-      run("for i in {0..360}; do echo \"Waiting for Tomcat to start\"; if [[ \"\" != \"$\(netstat -an | grep #{tomcat_port}\)\" ]]; then break; fi; sleep 30; done")
+      run("for i in {0..180}; do echo \"Waiting for Tomcat to start\"; if [ \"\" != \"$\(netstat -an | grep #{tomcat_port}\)\" ]; then break; fi; sleep 30; done")
       run("netstat -an | grep #{tomcat_port}")
     end
 
