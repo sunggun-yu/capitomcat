@@ -15,6 +15,15 @@
     <![endif]-->
   </head>
   <body>
+  	<div id="fb-root"></div>
+  	<script>(function(d, s, id) {
+  	  var js, fjs = d.getElementsByTagName(s)[0];
+  	  if (d.getElementById(id)) return;
+  	  js = d.createElement(s); js.id = id;
+  	  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
+  	  fjs.parentNode.insertBefore(js, fjs);
+  	}(document, 'script', 'facebook-jssdk'));</script>
+  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
     <div class="wrapper">
       <header>
         <h1>Capitomcat</h1>
@@ -29,19 +38,12 @@
       <section>
         <h1>
 <a name="capistrano-recipe-for-tomcat" class="anchor" href="#capistrano-recipe-for-tomcat"><span class="octicon octicon-link"></span></a>Capistrano Recipe for Tomcat</h1>
+<!-- Version Badge -->
 <p><a href="http://badge.fury.io/rb/capitomcat"><img src="https://badge.fury.io/rb/capitomcat@2x.png" alt="Gem Version" height="18"></a></p>
-<p>
-	<a href="https://twitter.com/share" class="twitter-share-button" data-url="http://capitomcat.sunggun.me" data-hashtags="capitomcat" data-dnt="true">Tweet</a>
-	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
-	<div id="fb-root"></div>
-	<script>(function(d, s, id) {
-	  var js, fjs = d.getElementsByTagName(s)[0];
-	  if (d.getElementById(id)) return;
-	  js = d.createElement(s); js.id = id;
-	  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-	  fjs.parentNode.insertBefore(js, fjs);
-	}(document, 'script', 'facebook-jssdk'));</script>
-</p>
+<!-- Twitter share button -->
+<span><a href="https://twitter.com/share" class="twitter-share-button" data-url="http://capitomcat.sunggun.me" data-hashtags="capitomcat" data-dnt="true">Tweet</a></span>
+<!-- Facebook share button -->
+<div class="fb-share-button" data-href="http://capitomcat.sunggun.me" data-type="button_count"></div>
 <h2>
 <a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
 
