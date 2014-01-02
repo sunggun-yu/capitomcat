@@ -1,106 +1,157 @@
+require 'capistrano'
+
 # Author:: Sunggun Yu
 
-configuration = Capistrano::Configuration.respond_to?(:instance) ?
-  Capistrano::Configuration.instance(:must_exist) :
-  Capistrano.configuration(:must_exist)
+# User section
+set   :tomcat_user, :tomcat_user
+set   :tomcat_user_group, :tomcat_user_group
+set   :tomcat_port, :tomcat_port
 
-configuration.load do
+# Local file section
+set   :local_war_file, :local_war_file
+set   :context_template_file, :context_template_file
 
-  default_run_options[:pty] = true
-  default_run_options[:shell] = '/bin/sh'
+# Remote setting section
+set   :context_name, :context_name
+set   :remote_docBase, :remote_docBase
+set   :remote_context_file, :remote_context_file
+set   :remote_tomcat_cmd, :remote_tomcat_cmd
+set   :remote_tomcat_work_dir, :remote_tomcat_work_dir
+set   :isParallel, :isParallel
 
-  set :tmp_dir, "/tmp"
+# Local Setting
+set   :tmp_dir, "/tmp"
+set   :parallelism, :sequence
 
-  desc "Capistrano Recipe for Tomcat"
-  namespace :capitomcat do
-    desc "Stop Tomcat"
-    task :stop, :roles => :app do
-      run "#{sudo :as => tomcat_cmd_user} #{remote_tomcat_cmd} stop", :pty => true
-    end
+desc "Capistrano Recipe for Tomcat"
+namespace :capitomcat do
 
-    desc "Start Tomcat"
-    task :start, :roles => :app do
-      run "echo `nohup #{sudo :as => tomcat_cmd_user} #{remote_tomcat_cmd} start&` && sleep 1", :pty => true
-      run("for i in {0..180}; do echo \"Waiting for Tomcat to start\"; if [ \"\" != \"$\(netstat -an | grep #{tomcat_port}\)\" ]; then break; fi; sleep 30; done")
-      run("netstat -an | grep #{tomcat_port}")
-    end
-
-    desc "Upload WAR file"
-    task :uploadWar, :roles => :app do
-      set(:war_file_name) { File.basename(remote_docBase) }
-      set :tmp_war_file, "#{tmp_dir}/#{war_file_name}"
-      # Clean remote file before upload
-      remove_file_if_exist('root', tmp_war_file)
-      # Upload WAR file to temp dir
-      upload(local_war_file, tmp_war_file, :via => :scp, :pty => true)
-      begin
-        # Change uploaded WAR file's owner
-        run "#{sudo :as => 'root'} chown #{tomcat_user}:#{tomcat_user} #{tmp_war_file}"
-        # Move tmp WAR fiel to actual path
-        run "#{sudo :as => tomcat_user} cp #{tmp_war_file} #{remote_docBase}", :mode => 0644
-        # Clean remote file after task finished
-        remove_file_if_exist('root', tmp_war_file)
-      rescue
-        run "#{sudo :as => 'root'} rm #{tmp_war_file}"
-      end
-    end
-
-    desc "Update and upload context file"
-    task :updateContext, :roles => :app do
-      set(:context_file_name) { File.basename(remote_context_file) }
-      set :tmp_context_file, "#{tmp_dir}/#{context_file_name}"
-      # Clean remote file before upload
-      remove_file_if_exist('root', tmp_context_file)
-      # Generate context file from template and upload to temp dir on the remote server
-      generate_config(context_template_file, tmp_context_file)
-      begin
-        # Change uploaded context file's owner
-        run "#{sudo :as => 'root'} chown #{tomcat_user}:#{tomcat_user} #{tmp_context_file}"
-        # Move tmp WAR fiel to actual path
-        run "#{sudo :as => tomcat_user} cp #{tmp_context_file} #{remote_context_file}", :mode => 0644
-        # Clean remote file after task finished
-        remove_file_if_exist('root', tmp_context_file)
-      rescue
-        run "#{sudo :as => 'root'} rm #{tmp_context_file}"
-      end
-    end
-
-    desc "Cleaning-up Tomcat work directory"
-    task :cleanWorkDir, :roles => :app do
-      set :remote_tomcat_work_dir, "#{remote_tomcat_work_dir}"
-      run "#{sudo :as => tomcat_user} rm -rf #{remote_tomcat_work_dir}"
+  desc "Stop Tomcat"
+  task :stop do
+    on roles(:app), in: get_parallelism, wait: 5 do |hosts|
+      stopTomcat fetch(:remote_tomcat_cmd)
     end
   end
 
-  # Copy context.xml template to remote server
-  def parse_config(file)
-    require 'erb'
-    template=File.read(file)
-    return ERB.new(template).result(binding)
+  desc "Start Tomcat"
+  task :start do
+    on roles(:app), in: get_parallelism, wait: 5 do |hosts|
+      startTocmat fetch(:remote_tomcat_cmd)
+      checkTomcatStarted fetch(:tomcat_port)
+    end
   end
 
-  # Generate config file from erb template
-  def generate_config(local_file,remote_file)
-    temp_file = '/tmp/' + File.basename(local_file)
-    buffer    = parse_config(local_file)
-    File.open(temp_file, 'w+') { |f| f << buffer }
-    upload temp_file, remote_file, :via => :scp
-    `rm #{temp_file}`
+  desc "Upload WAR file"
+  task :uploadWar do
+    on roles(:app), in: get_parallelism, wait: 5 do |hosts|
+      uploadWarFile fetch(:user), 
+                    fetch(:local_war_file),
+                    fetch(:remote_docBase),
+                    fetch(:tomcat_user),
+                    fetch(:tomcat_user_group)
+    end
   end
 
-  # Remove file if exist
-  def remove_file_if_exist exc_user, file
-    run "if [ -e #{file} ]; then #{sudo :as => exc_user} rm -f #{file}; fi"
+  desc "Update and upload context file"
+  task :updateContext do
+    template = getContextTemplate(fetch(:context_template_file), fetch(:context_name), fetch(:remote_docBase))
+    on roles(:app), in: fetch(:parallelism), wait: 5 do |hosts|
+      uploadContext fetch(:user), template, fetch(:remote_context_file), fetch(:tomcat_user), fetch(:tomcat_user_group)
+    end
+  end
+
+  desc "Cleaning-up Tomcat work directory"
+  task :cleanWorkDir do
+    on roles(:app), in: get_parallelism, wait: 5 do |hosts|
+      cleanWorkDir fetch(:remote_tomcat_work_dir), fetch(:tomcat_user)
+    end
   end
 end
 
-# Excute multiple task by serial
-def serial_task(&block)
-  original = ENV['HOSTS']
-  find_servers_for_task(self.current_task).each do |server|
-    ENV['HOSTS'] = server.host
-    yield
+# Start Tomcat server
+def startTocmat tomcat_command
+  execute "echo `nohup sudo #{tomcat_command} start&` && sleep 1"
+end
+
+# Check status whether started
+def checkTomcatStarted tomcat_port
+  execute "for i in {0..180}; do echo \"Waiting for Tomcat to start\"; if [ \"\" != \"$\(netstat -an | grep #{tomcat_port}\)\" ]; then break; fi; sleep 30; done"
+  execute "netstat -an | grep #{tomcat_port}"
+end
+
+# Stop Tomcat server
+def stopTomcat tomcat_command
+  execute :sudo, "#{tomcat_command} stop"
+end
+
+# Upload the WAR file
+def uploadWarFile upload_user, local_war_file, remote_docBase, tomcat_user, tomcat_user_group
+  # Setup file name
+  temp_dir = Pathname.new('/tmp')
+  temp_file = File.basename(remote_docBase)
+  tmp_war_file = temp_dir.join(temp_file)
+
+  # Clean remote file before uploading
+  remove_file_if_exist(upload_user, tmp_war_file)
+  # Upload WAR file into temp dir
+  upload! local_war_file, tmp_war_file
+  # Move tmp WAR file to actual path
+  moveAndChangeOwner(tmp_war_file, remote_docBase, tomcat_user, tomcat_user_group)
+end
+
+# Generate context.xml file string from ERB template file and bindings
+def getContextTemplate context_template_file, context_name, remote_docBase
+  template_file = File.read(File.expand_path(context_template_file, __FILE__))
+  context_name = context_name
+  remote_docBase = remote_docBase
+  template = ERB.new(template_file)
+  return template.result(binding)
+end
+
+# Upload context template string to remote server
+def uploadContext upload_user, context_template, remote_context_file, tomcat_user, tomcat_user_group
+  temp_upload_file = '/tmp/' + File.basename(remote_context_file)
+  remove_file_if_exist upload_user, temp_upload_file
+  contents = StringIO.new(context_template)
+  upload! contents, temp_upload_file
+  ChangeOwnerAndMove temp_upload_file, remote_context_file, tomcat_user, tomcat_user_group
+end
+
+# Clean-up tomcat's work directory
+def cleanWorkDir remote_tomcat_work_dir, tomcat_user
+  execute "if [ -e #{remote_tomcat_work_dir} ]; then sudo -u #{tomcat_user} rm -rf #{remote_tomcat_work_dir}; fi"
+end
+
+# Get Parallelism
+
+def get_parallelism
+  if fetch(:isParallel) == true
+    return :parallel
+  else
+    return :sequence
   end
-ensure
-  ENV['HOSTS'] = original
+end
+
+# Move file and change owner
+
+def moveAndChangeOwner file, destination, user, group
+  # Move tmp WAR fiel to actual path
+  execute :mv, "-f", file, destination
+  # Change uploaded WAR file's owner
+  execute :sudo, :chown, "#{user}:#{group}", destination
+end
+
+# Change owner and move file
+
+def ChangeOwnerAndMove file, destination, user, group
+  # Change uploaded WAR file's owner
+  execute :sudo, :chown, "#{user}:#{group}", file
+  # Move tmp WAR fiel to actual path
+  execute :sudo, "-u", user, :mv, "-f", file, destination
+end
+
+# Remove file if exist
+
+def remove_file_if_exist user, file
+  execute "if [ -e #{file} ]; then sudo chown #{user} #{file} ; rm -f #{file}; fi"
 end
