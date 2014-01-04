@@ -59,6 +59,16 @@ namespace :capitomcat do
     execute "if [ -e #{remote_tomcat_work_dir} ]; then sudo -u #{tomcat_user} rm -rf #{remote_tomcat_work_dir}; fi"
   end
 
+  # Get Parallelism
+
+  def get_parallelism
+    if fetch(:isParallel) == true
+      return :parallel
+    else
+      return :sequence
+    end
+  end
+
   # Move file and change owner
 
   def moveAndChangeOwner file, destination, user, group
