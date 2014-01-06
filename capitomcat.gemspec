@@ -17,8 +17,8 @@ Gem::Specification.new do |s|
   s.description = %q{Capitomcat is the library that supports basic task for Tomcat deployment. You can create your own Capistrano 3 recipe for tomcat using with Capitomcat.}
 
   s.files         = `git ls-files`.split("\n")
-  s.require_paths = %w(lib template)
+  s.require_paths = ["lib"]
 
-  s.add_dependency 'capistrano', '~> 3.0.1'
-  s.add_dependency 'capistrano-bundler'
+  s.add_dependency 'capistrano', '~> 3.0', '>= 3.0.1'
+  s.add_dependency 'capistrano-bundler', '~> 1.1', '>= 1.1.1'
 end
