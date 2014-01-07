@@ -1,11 +1,11 @@
-set :stage, :dev
+set :stage, :staging
 
 # Simple Role Syntax
 # ==================
 # Supports bulk-adding hosts to roles, the primary
 # server in each group is considered to be the first
 # unless any hosts have the primary property set.
-role :app, %w{deploy@dev01 deploy@dev02}
+role :app, %w{deploy@stg01 deploy@stg02}
 
 # Extended Server Syntax
 # ======================
@@ -36,4 +36,4 @@ role :app, %w{deploy@dev01 deploy@dev02}
 #   }
 # setting per server overrides global ssh_options
 
-# fetch(:default_env).merge!(rails_env: :production)
+# fetch(:default_env).merge!(rails_env: :staging)

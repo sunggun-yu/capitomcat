@@ -21,6 +21,9 @@ set :log_level, :info
 set :pty, true
 set :use_sudo, true
 
+# Server definition section
+role :app, %w{deploy@dev01 deploy@dev02}
+
 # Remote Tomcat server setting section
 set   :tomcat_user, 'tomcat7'
 set   :tomcat_user_group, 'tomcat7'
