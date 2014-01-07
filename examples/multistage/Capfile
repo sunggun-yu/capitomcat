@@ -1,25 +1,26 @@
-# Author:: Sunggun Yu
+# Load DSL and Setup Up Stages
+require 'capistrano/setup'
 
-require 'capistrano/ext/multistage'
-load 'config/deploy.rb'
+# Includes default deployment tasks
+require 'capistrano/deploy'
 
-# Application Stage Section
-set :stages, %w(dev stg prod)
+# Includes tasks from other gems included in your Gemfile
+#
+# For documentation on these, see for example:
+#
+#   https://github.com/capistrano/rvm
+#   https://github.com/capistrano/rbenv
+#   https://github.com/capistrano/chruby
+#   https://github.com/capistrano/bundler
+#   https://github.com/capistrano/rails/tree/master/assets
+#   https://github.com/capistrano/rails/tree/master/migrations
+#
+# require 'capistrano/rvm'
+# require 'capistrano/rbenv'
+# require 'capistrano/chruby'
+# require 'capistrano/bundler'
+# require 'capistrano/rails/assets'
+# require 'capistrano/rails/migrations'
 
-# User section
-set   :user, "deploy"
-set   :password, "#{password}" #Set password from parameter.
-set   :tomcat_user, "tomcat"
-set   :tomcat_cmd_user, "root"
-set   :tomcat_port, "8080"
-
-# Local file section
-set   :local_war_file, "/your-local-directory/app.war"
-set   :context_template_file, "./template/context.xml.erb"
-
-# Remote setting section
-set   :context_name, "app"
-set(  :remote_docBase) {"/your-remote-directory-to-save-war-file/"+File.basename(local_war_file)} unless exists?(:remote_docBase)
-set   :remote_context_file, "/var/lib/tomcat7/conf/Catalina/localhost/app.xml"
-set   :remote_tomcat_cmd, "/etc/init.d/tomcat7"
-set   :remote_tomcat_work_dir, "/var/lib/tomcat7/work/Catalina/localhost/app"
+# Loads custom tasks from `lib/capistrano/tasks' if you have any defined.
+Dir.glob('lib/capistrano/tasks/*.cap').each { |r| import r }
