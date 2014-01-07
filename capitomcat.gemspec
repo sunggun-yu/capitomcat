@@ -6,7 +6,7 @@ $:.push File.expand_path('lib', __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = 'capitomcat'
-  s.version     = '0.1.0'
+  s.version     = '1.0.0'
 
   s.authors     = ['Sunggun Yu']
   s.email       = ['sunggun.dev@gmail.com']
