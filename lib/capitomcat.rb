@@ -49,7 +49,7 @@ namespace :capitomcat do
     # Upload WAR file into temp dir
     upload! local_war_file, tmp_war_file
     # Move tmp WAR file to actual path
-    move_and_change_owner(tmp_war_file, tomcat_war_file, tomcat_user, tomcat_user_group)
+    change_owner_and_move(tmp_war_file, tomcat_war_file, tomcat_user, tomcat_user_group)
   end
 
   # Generate context.xml file string from ERB template file and bindings
