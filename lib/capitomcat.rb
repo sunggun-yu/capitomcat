@@ -39,23 +39,33 @@ namespace :capitomcat do
     tomcat_user = fetch(:tomcat_user)
     tomcat_user_group = fetch(:tomcat_user_group)
 
-    # Setup file name
-    temp_dir = Pathname.new('/tmp')
-    temp_file = File.basename(tomcat_war_file)
-    tmp_war_file = temp_dir.join(temp_file)
+    if File.exists?(local_war_file)
+      # Setup file name
+      temp_dir = Pathname.new('/tmp')
+      temp_file = File.basename(tomcat_war_file)
+      tmp_war_file = temp_dir.join(temp_file)
 
-    # Clean remote file before uploading
-    remove_file_if_exist(upload_user, tmp_war_file)
-    # Upload WAR file into temp dir
-    upload! local_war_file, tmp_war_file
-    # Move tmp WAR file to actual path
-    change_owner_and_move(tmp_war_file, tomcat_war_file, tomcat_user, tomcat_user_group)
+      # Clean remote file before uploading
+      remove_file_if_exist(upload_user, tmp_war_file)
+      # Upload WAR file into temp dir
+      upload! local_war_file, tmp_war_file
+      # Move tmp WAR file to actual path
+      change_owner_and_move(tmp_war_file, tomcat_war_file, tomcat_user, tomcat_user_group)
+    else
+      error("Local WAR file does not existing. : #{local_war_file}")
+      exit(1)
+    end
   end
 
   # Generate context.xml file string from ERB template file and bindings
   def get_context_template
     # local variables
     context_template_file = fetch(:context_template_file)
+
+    if ! File.exists?(context_template_file)
+      error('Context template file does not existing.')
+      exit(1)
+    end
 
     # local variables for erb file
     tomcat_context_name = fetch(:tomcat_context_name)
@@ -89,7 +99,13 @@ namespace :capitomcat do
     tomcat_work_dir = fetch(:tomcat_work_dir)
     tomcat_user = fetch(:tomcat_user)
 
-    execute "if [ -e #{tomcat_work_dir} ]; then sudo -u #{tomcat_user} rm -rf #{tomcat_work_dir}; fi"
+    if test "[ -d #{tomcat_work_dir} ]"
+      within(tomcat_work_dir) do
+        execute :sudo, '- u', tomcat_user, 'rm -rf', tomcat_work_dir
+      end
+    else
+      warn('Tomcat work directory does not existing.')
+    end
   end
 
   # Get Parallelism
@@ -112,34 +128,40 @@ namespace :capitomcat do
     end
   end
 
-  # Move file and change owner
-  # @param [String] file
-  # @param [String] destination
-  # @param [String] user
-  # @param [String] group
-  def move_and_change_owner (file, destination, user, group)
-    # Move tmp WAR file to actual path
-    execute :mv, '-f', file, destination
-    # Change uploaded WAR file's owner
-    execute :sudo, :chown, "#{user}:#{group}", destination
-  end
-
   # Change owner and move file
   # @param [String] file
-  # @param [String] destination
+  # @param [String] destination file name with its path
   # @param [String] user
   # @param [String] group
   def change_owner_and_move (file, destination, user, group)
-    # Change uploaded WAR file's owner
+    # Change file's owner
+    puts user
     execute :sudo, :chown, "#{user}:#{group}", file
-    # Move tmp WAR file to actual path
-    execute :sudo, '-u', user, :mv, '-f', file, destination
+
+    # Move file to destination
+    target_dir = File.dirname(destination)
+    if test target_dir
+      within target_dir do
+        execute :sudo, '-u', user, :mv, '-f', file, destination
+      end
+    else
+      warn('Target directory is not existing. Capitomcat will try mkdir for target directory.')
+      execute :sudo, '-u', user, :mkdir, '-p', target_dir
+      within(target_dir) do
+        execute :sudo, '-u', user, :mv, '-f', file, destination
+      end
+    end
   end
 
   # Remove file if exist
   # @param [String] user
   # @param [String] file
   def remove_file_if_exist (user, file)
-    execute "if [ -e #{file} ]; then sudo chown #{user} #{file} ; rm -f #{file}; fi"
+    if test "[ -e #{file} ]"
+      execute :sudo, :chown, user, file
+      execute :rm, '-f', file
+    else
+      warn('Tomcat work directory does not existing.')
+    end
   end
 end
