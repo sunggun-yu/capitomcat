@@ -1,0 +1,26 @@
+# Capitomcat
+require 'capitomcat'
+
+namespace :tomcat do
+  desc 'Tomcat WebApp Deployment with context.xml file updating'
+  task :deploy do
+    puts fetch(:context_template_file)
+    on roles(:app), in: get_parallelism, wait: 5 do |hosts|
+      info 'Upload WAR file'
+      upload_war_file
+
+      info 'Stop Tomcat'
+      stop_tomcat
+
+      info 'Update Context'
+      upload_context_file
+
+      info 'Clean Work directory'
+      cleanup_work_dir
+
+      info 'Start Tomcat'
+      start_tomcat
+      check_tomcat_started
+    end
+  end
+end

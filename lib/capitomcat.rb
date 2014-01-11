@@ -68,9 +68,9 @@ namespace :capitomcat do
     end
 
     # local variables for erb file
-    tomcat_context_name = fetch(:tomcat_context_name)
+    tomcat_context_path = fetch(:tomcat_context_path)
     tomcat_war_file = fetch(:tomcat_war_file)
-    info ("#{tomcat_context_name}, #{tomcat_war_file}" )
+    info ("#{tomcat_context_path}, #{tomcat_war_file}" )
 
     template_file = File.read(File.expand_path(context_template_file, __FILE__))
     template = ERB.new(template_file)
@@ -140,12 +140,12 @@ namespace :capitomcat do
 
     # Move file to destination
     target_dir = File.dirname(destination)
-    if test target_dir
+    if test "[ -d #{target_dir} ]"
       within target_dir do
         execute :sudo, '-u', user, :mv, '-f', file, destination
       end
     else
-      warn('Target directory is not existing. Capitomcat will try mkdir for target directory.')
+      warn("Target directory is not existing. Capitomcat will try mkdir for target directory. : #{target_dir}")
       execute :sudo, '-u', user, :mkdir, '-p', target_dir
       within(target_dir) do
         execute :sudo, '-u', user, :mv, '-f', file, destination
@@ -161,7 +161,7 @@ namespace :capitomcat do
       execute :sudo, :chown, user, file
       execute :rm, '-f', file
     else
-      warn('Tomcat work directory does not existing.')
+      warn('Target file to remove is not existing.')
     end
   end
 end

@@ -25,7 +25,7 @@ set   :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
 # Deploy setting section
 set   :local_war_file, '/tmp/test-web.war'
 set   :context_template_file, File.expand_path('../../../../templates/context.xml.erb', __FILE__).to_s
-set   :use_parallel, true
+set   :use_parallel, false
 
 namespace :tomcat do
   desc 'Tomcat WebApp Deployment with context.xml file updating'
