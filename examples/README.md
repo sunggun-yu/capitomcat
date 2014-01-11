@@ -1,1 +1,0 @@
-# Sample project for single stage deployment
