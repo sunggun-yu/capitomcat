@@ -64,52 +64,6 @@ namespace :capitomcat do
     end
   end
 
-  namespace :jenkins do
-    desc <<-DESC
-    Capitomcat deploy task for Jenkins plugin(jenkins-capitomcat-plugin)
-    DESC
-    task :deploy do
-      listener = fetch(:listener)
-      listener.info '---------------------------------------------------------------------------'
-      listener.info 'Capitomcat Tomcat Deploy'
-      listener.info '---------------------------------------------------------------------------'
-      on roles(:app), in: get_parallelism, wait: 5 do |host|
-        if fetch(:use_context_update) then
-          listener.info "[#{host}] Uploading WAR file : #{fetch(:local_war_file)} => #{fetch(:tomcat_war_file)}"
-          upload_war_file
-
-          listener.info "[#{host}] Stopping Tomcat    : #{fetch(:tomcat_cmd)} stop"
-          stop_tomcat
-
-          listener.info "[#{host}] Updating Context   : #{fetch(:tomcat_context_file)}, #{fetch(:tomcat_context_path)}, #{fetch(:tomcat_war_file)}"
-          upload_context_file
-
-          listener.info "[#{host}] Cleaning-up Tomcat Work directory : #{fetch(:tomcat_work_dir)}"
-          cleanup_work_dir
-
-          listener.info "[#{host}] Starting Tomcat    : #{fetch(:tomcat_cmd)} start"
-          start_tomcat
-          check_tomcat_started
-        else
-          listener.info "[#{host}] Stopping Tomcat    : #{fetch(:tomcat_cmd)} stop"
-          stop_tomcat
-
-          listener.info "[#{host}] Uploading WAR file : #{fetch(:local_war_file)} => #{fetch(:tomcat_war_file)}"
-          upload_war_file
-
-          listener.info "[#{host}] Cleaning-up Tomcat Work directory : #{fetch(:tomcat_work_dir)}"
-          cleanup_work_dir
-
-          listener.info "[#{host}] Starting Tomcat    : #{fetch(:tomcat_cmd)} start"
-          start_tomcat
-          check_tomcat_started
-        end
-
-      end
-      listener.info '---------------------------------------------------------------------------'
-    end
-  end
-
   # Start Tomcat server
   def start_tomcat
     # local variables
