@@ -2,23 +2,25 @@
 
 # Author:: Sunggun Yu
 
-$:.push File.expand_path("lib", __FILE__)
+$:.push File.expand_path('lib', __FILE__)
+
+require_relative 'lib/capitomcat/version'
 
 Gem::Specification.new do |s|
-  s.name        = "capitomcat"
-  s.version     = "0.0.3"
+  s.name        = 'capitomcat'
+  s.version     = Capitomcat::VERSION
 
-  s.authors     = ["Sunggun Yu"]
-  s.email       = ["sunggun.dev@gmail.com"]
+  s.authors     = ['Sunggun Yu']
+  s.email       = ['sunggun.dev@gmail.com']
   s.licenses    = ['Apache 2.0']
-  s.date        = %q{2013-12-27} 
-  s.homepage    = "http://sunggun-yu.github.io/capitomcat/"
-  s.summary     = %q{Capistrano Recipe for Tomcat}
-  s.description = %q{You can deploy your war file to multiple remote tomcat servers through this Capistrano recipe.}
+  s.date        = %q{2014-01-11}
+  s.homepage    = 'http://sunggun-yu.github.io/capitomcat/'
+  s.summary     = %q{Capistrano 3 recipe for Tomcat web application deployment}
+  s.description = %q{Capitomcat is the Capistrano 3 recipe for Tomcat web application deployment.}
 
   s.files         = `git ls-files`.split("\n")
   s.require_paths = ["lib"]
 
-  s.add_dependency('capistrano')
-  s.add_development_dependency('rake')
+  s.add_dependency 'capistrano', '~> 3.0', '>= 3.0.1'
+  s.add_dependency 'capistrano-bundler', '~> 1.1', '>= 1.1.1'
 end
