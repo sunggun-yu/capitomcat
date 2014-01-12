@@ -4,17 +4,19 @@
 
 $:.push File.expand_path('lib', __FILE__)
 
+require_relative 'lib/capitomcat/version'
+
 Gem::Specification.new do |s|
   s.name        = 'capitomcat'
-  s.version     = '1.0.0'
+  s.version     = Capitomcat::VERSION
 
   s.authors     = ['Sunggun Yu']
   s.email       = ['sunggun.dev@gmail.com']
   s.licenses    = ['Apache 2.0']
-  s.date        = %q{2014-01-06}
+  s.date        = %q{2014-01-11}
   s.homepage    = 'http://sunggun-yu.github.io/capitomcat/'
-  s.summary     = %q{Capistrano library for Capistrano 3 Tomcat Recipe}
-  s.description = %q{Capitomcat is the library that supports basic task for Tomcat deployment. You can create your own Capistrano 3 recipe for tomcat using with Capitomcat.}
+  s.summary     = %q{Capistrano 3 recipe for Tomcat web application deployment}
+  s.description = %q{Capitomcat is the Capistrano 3 recipe for Tomcat web application deployment.}
 
   s.files         = `git ls-files`.split("\n")
   s.require_paths = ["lib"]

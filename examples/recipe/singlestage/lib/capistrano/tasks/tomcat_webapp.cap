@@ -26,27 +26,3 @@ set   :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
 set   :local_war_file, '/tmp/test-web.war'
 set   :context_template_file, File.expand_path('../../../../templates/context.xml.erb', __FILE__).to_s
 set   :use_parallel, false
-
-namespace :tomcat do
-  desc 'Tomcat WebApp Deployment with context.xml file updating'
-  task :deploy do
-    puts fetch(:context_template_file)
-    on roles(:app), in: get_parallelism, wait: 5 do |hosts|
-      info 'Upload WAR file'
-      upload_war_file
-
-      info 'Stop Tomcat'
-      stop_tomcat
-
-      info 'Update Context'
-      upload_context_file
-
-      info 'Clean Work directory'
-      cleanup_work_dir
-
-      info 'Start Tomcat'
-      start_tomcat
-      check_tomcat_started
-    end
-  end
-end
