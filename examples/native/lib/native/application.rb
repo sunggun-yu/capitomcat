@@ -37,11 +37,6 @@ class Application
     capistrano = Capistrano::Application.new
     require 'capitomcat'
     capistrano.invoke('capitomcat:deploy')
-
-    capistrano = Capistrano::Application.new
-    capistrano.add_import('../lib/native/tasks/tomcat_webapp.cap')
-    capistrano.load_imports
-    capistrano.invoke('tomcat:deploy')
   end
 
   def self.do_customized_cap
