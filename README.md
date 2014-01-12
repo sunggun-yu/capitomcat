@@ -57,25 +57,33 @@ $ gem install capitomcat
 <pre>
 role :app, %w{deploy@dev01 deploy@dev02}
 </pre>
-### Configuration for Capitomcat
+### Required configuration for Capitomcat
 <pre>
 set :use_sudo, true
 
 # Remote Tomcat server setting section
-set   :tomcat_user, 'tomcat7'
-set   :tomcat_user_group, 'tomcat7'
-set   :tomcat_port, '8080'
-set   :tomcat_cmd, '/etc/init.d/tomcat7'
-set   :use_tomcat_user_cmd, false
-set   :tomcat_war_file, '/var/app/war/test-web.war'
-set   :tomcat_context_path, '/test-web'
-set   :tomcat_context_file, '/var/lib/tomcat7/conf/Catalina/localhost/test-web.xml'
-set   :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
+set :tomcat_user, 'tomcat7'
+set :tomcat_user_group, 'tomcat7'
+set :tomcat_port, '8080'
+set :tomcat_cmd, '/etc/init.d/tomcat7'
+set :use_tomcat_user_cmd, false
+set :tomcat_war_file, '/var/app/war/test-web.war'
+set :tomcat_context_path, '/test-web'
+set :tomcat_context_file, '/var/lib/tomcat7/conf/Catalina/localhost/test-web.xml'
+set :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
 
 # Deploy setting section
-set   :local_war_file, '/tmp/test-web.war'
-set   :context_template_file, File.expand_path('../templates/context.xml.erb', __FILE__).to_s
-set   :use_parallel, true
+set :local_war_file, '/tmp/test-web.war'
+set :context_template_file, File.expand_path('../templates/context.xml.erb', __FILE__).to_s
+set :use_context_update, false
+set :use_parallel, false
+set :use_context_update, false
+</pre>
+
+###Task
+You can get task name of Capitomcat by run `cap -T`
+<pre>
+cap capitomcat:deploy              # Capitomcat Recipe for Tomcat web application deployment
 </pre>
 
 ###***Documentation is still working on...***
