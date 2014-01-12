@@ -15,15 +15,6 @@
     <![endif]-->
   </head>
   <body>
-  	<div id="fb-root"></div>
-  	<script>(function(d, s, id) {
-  	  var js, fjs = d.getElementsByTagName(s)[0];
-  	  if (d.getElementById(id)) return;
-  	  js = d.createElement(s); js.id = id;
-  	  js.src = "//connect.facebook.net/en_US/all.js#xfbml=1";
-  	  fjs.parentNode.insertBefore(js, fjs);
-  	}(document, 'script', 'facebook-jssdk'));</script>
-  <script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>	<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>
     <div class="wrapper">
       <header>
         <h1>Capitomcat</h1>
@@ -37,9 +28,56 @@
       </header>
       <section>
         <h1>
-<a name="capistrano-recipe-for-tomcat" class="anchor" href="#capistrano-recipe-for-tomcat"><span class="octicon octicon-link"></span></a>Capistrano Recipe for Tomcat</h1>
-<!-- Version Badge -->
-<p><a href="http://badge.fury.io/rb/capitomcat"><img src="https://badge.fury.io/rb/capitomcat@2x.png" alt="Gem Version" height="18"></a></p>
+<a name="capitomcat" class="anchor" href="#capitomcat"><span class="octicon octicon-link"></span></a>Capitomcat</h1>
+
+<p><a href="http://badge.fury.io/rb/capitomcat"><img src="https://badge.fury.io/rb/capitomcat.png" alt="Gem Version"></a></p>
+
+<p>Capitomcat is library for creating Capistrano Tomcat recipe.
+Capitomcat includes basic tasks for Tomcat deployment. You can create easily your own Capistrano 3 recipe for Tomcat with Capitomcat.</p>
+
+<h2>
+<a name="requirement" class="anchor" href="#requirement"><span class="octicon octicon-link"></span></a>Requirement</h2>
+
+<h3>
+<a name="gem-dependency" class="anchor" href="#gem-dependency"><span class="octicon octicon-link"></span></a>Gem Dependency</h3>
+
+<ul>
+<li>Ruby &gt;= 1.9</li>
+<li>Capistrano &gt;= 3.0.1</li>
+</ul><h3>
+<a name="authentication--authorisation-setting-for-remote-servers" class="anchor" href="#authentication--authorisation-setting-for-remote-servers"><span class="octicon octicon-link"></span></a>Authentication &amp; Authorisation setting for Remote Servers</h3>
+
+<p>By the recommendation of Capistrano 3, Capitomcat use SSH Key and NOPASSWD instead of asking password.</p>
+
+<p>for more details, please refer to  <a href="http://capistranorb.com/documentation/getting-started/authentication-and-authorisation/">Authentication &amp; Authorisation</a> page on Capistrano website.</p>
+
+<h4>
+<a name="user-account-setting" class="anchor" href="#user-account-setting"><span class="octicon octicon-link"></span></a>User account setting</h4>
+
+<div class="highlight highlight-sh"><pre>root@remote <span class="nv">$ </span>adduser &lt;your_deploy_user_name&gt;
+root@remote <span class="nv">$ </span>passwd -l &lt;your_deploy_user_name&gt;
+</pre></div>
+
+<p>or</p>
+
+<div class="highlight highlight-sh"><pre>root@remote <span class="nv">$ </span>adduser --home /home/deploy --disabled-password deploy
+</pre></div>
+
+<h4>
+<a name="ssh-key-setting" class="anchor" href="#ssh-key-setting"><span class="octicon octicon-link"></span></a>SSH Key setting</h4>
+
+<p>Add your SSH key into <code>authorized_keys</code> file of <code>deploy</code> user on your remote server.</p>
+
+<h4>
+<a name="nopasswd-setting-for-sudo" class="anchor" href="#nopasswd-setting-for-sudo"><span class="octicon octicon-link"></span></a>NOPASSWD Setting for SUDO</h4>
+
+<p>Folowing NOPASSWD setting is required. please add following setting into your <code>/etc/sudoers</code> file.</p>
+
+<div class="highlight highlight-sh"><pre>%your_deploy_user_name <span class="nv">ALL</span><span class="o">=</span>NOPASSWD:/etc/init.d/tomcat7 &lt;Your tomcat <span class="nb">command</span>&gt;
+%your_deploy_user_name <span class="nv">ALL</span><span class="o">=</span>NOPASSWD: /bin/chown 
+%your_deploy_user_name <span class="nv">ALL</span><span class="o">=(</span>&lt;your_tomcat_user&gt; : &lt;your_tomcat_user_group&gt;<span class="o">)</span> NOPASSWD: ALL
+</pre></div>
+
 <h2>
 <a name="installation" class="anchor" href="#installation"><span class="octicon octicon-link"></span></a>Installation</h2>
 
@@ -58,389 +96,85 @@
 <h3>
 <a name="install-capistrano" class="anchor" href="#install-capistrano"><span class="octicon octicon-link"></span></a>Install Capistrano</h3>
 
-<pre>
-$ gem install capistrano
-$ gem install capistrano-ext
-</pre>
+<p>Capitomcat v1.0.0 supports Capistrano 3. (Capitomcat v0.0.x supports Capistrano 2)</p>
+
+<div class="highlight highlight-sh"><pre><span class="nv">$ </span>gem install capistrano -v 3.0.1
+</pre></div>
 
 <h3>
 <a name="install-capitomcat" class="anchor" href="#install-capitomcat"><span class="octicon octicon-link"></span></a>Install Capitomcat</h3>
 
-<h4>
-<a name="install-from-rubygems" class="anchor" href="#install-from-rubygems"><span class="octicon octicon-link"></span></a>Install from RubyGems</h4>
-
-<pre>
-$ gem install capitomcat
-</pre>
-
-<h4>
-<a name="install-manually" class="anchor" href="#install-manually"><span class="octicon octicon-link"></span></a>Install manually</h4>
-
-<ul>
-<li>Check-out the source code
-<pre>
-$ git clone <a href="mailto:git@github.com">git@github.com</a>:sunggun-yu/capitomcat.git
-</pre>
-</li>
-<li>Build gem
-<pre>
-$ cd capitomcat
-$ gem build capitomcat.gemspec
-</pre>
-</li>
-<li>Install gem
-<pre>
-$ gem install capitomcat
-</pre>
-</li>
-</ul><h2>
-<a name="configuration" class="anchor" href="#configuration"><span class="octicon octicon-link"></span></a>Configuration</h2>
-
-<p>You have to add the following options in your <code>Capfile</code> or <code>deploy.rb</code></p>
-
-<pre>
-role :app
-set  :user
-set  :password
-set  :tomcat_user
-set  :tomcat_cmd_user
-set  :tomcat_port
-set  :local_war_file
-set  :context_template_file
-set  :context_name`
-set  :remote_docBase
-set  :remote_context_file 
-set  :remote_tomcat_cmd
-set  :remote_tomcat_work_dir
-set  :stages
-</pre>
-
-<ul>
-<li>
-<code>:app</code> - The application servers that you want to deploy</li>
-<li>
-<code>:user</code> - User name which is going to run Capistrano script.</li>
-<li>
-<code>:password</code> - Password of <code>:user</code>.</li>
-<li>
-<code>:tomcat_user</code> - The owner of Tomcat home directory.</li>
-<li>
-<code>:tomcat_cmd_user</code> - The user that runs tomcat scripts : ex) /etc/init.d/tomcat</li>
-<li>
-<code>:tomcat_port</code> - Port number of Tomcat server. this value is needed to check whether Tomcat process is running.</li>
-<li>
-<code>:local_war_file</code> - The WAR file which will upload to remote tomcat server.</li>
-<li>
-<code>:context_template_file</code> - Path for the template file in your local, which is application's Tomcat context. also, following ERB variable are should be included in the template file.
-
-<ul>
-<li>context.xml.erb
-<pre>
-&lt;Context path="/&lt;%= context_name %&gt;" docBase="&lt;%= remote_docBase %&gt;" /&gt;
-</pre>
-</li>
-<li>
-<code>&lt;%= context_name %&gt;</code> - This variable is for the <strong><em>path</em></strong> attribute in the context file. It will be replaced to <code>:context_name</code>
-</li>
-<li>
-<code>&lt;%= remote_docBase %&gt;</code> - This variable is for the <strong><em>docBase</em></strong> attribute in the context file.It will be replaced to <code>:remote_docBase</code>
-</li>
-</ul>
-</li>
-<li>
-<code>:context_name</code> - Root context name of application.</li>
-<li>
-<code>:remote_docBase</code> -  The pathname to the web application archive file (if this web application is being executed directly from the WAR file)</li>
-<li>
-<code>:remote_context_file</code> -  Application's context file path for Tomcat on your remote servers. basically, context file is located in <code>/your/tomcat/home/conf/Catalina/localhost/appname.xml</code>
-</li>
-<li>
-<code>:remote_tomcat_cmd</code> -  Tomcat's star, stop command. for example, <code>/etc/init.d/tomcat</code> or <code>/your/tomcat/home/bin/catalina.sh</code> can be used. please make sure not to include <code>start</code> or <code>stop</code> parameter.</li>
-<li>
-<code>:remote_tomcat_work_dir</code> - Tomcat work directory for application. this directory will be used at <code>capitomcat:cleanWorkDir</code> task</li>
-</ul><h3>
-<a name="multistage-setting" class="anchor" href="#multistage-setting"><span class="octicon octicon-link"></span></a>Multistage setting</h3>
-
-<p>If you want to use Multistage deployment, You should add following option in your <code>Capfile</code> or <code>deploy.rb</code>
-also, please refer to <a href="https://github.com/capistrano/capistrano/wiki/2.x-Multistage-Extension">Multistage Extension</a>.</p>
-
-<ul>
-<li>
-<code>:stages</code> -<br><pre>
-# Application Stage Section
-set :stages, %w(dev stg prod)
-</pre>
-</li>
-</ul><h3>
-<a name="examples" class="anchor" href="#examples"><span class="octicon octicon-link"></span></a>Examples</h3>
-
-<h4>
-<a name="single-stage" class="anchor" href="#single-stage"><span class="octicon octicon-link"></span></a>Single Stage</h4>
-
-<p>/your/capistrano/project/<strong><em>Capfile</em></strong></p>
-
-<pre><code>require 'capitomcat'
-
-# Application host section
-role  :app, "dev01", "dev02"
-
-# User section
-set   :user, "stg"
-set   :password, "password"
-set   :tomcat_user, "tomcat"
-set   :tomcat_cmd_user, "root"
-
-# Local file section
-set   :local_war_file, "/tmp/app.war"
-set   :context_template_file, "./template/context.xml.erb"
-
-# Remote setting section
-set   :context_name, "app"
-set   :remote_docBase, "/tmp/test/earl/war/abc.war"
-set   :remote_context_file, "/tmp/test/tomcat/conf/Catalina/localhost/app.xml"
-set   :remote_tomcat_cmd, "/tmp/test/etc/init.d/tomcat7"
-set   :remote_tomcat_work_dir, "/opt/tomcat/work/Catalina/localhost/app"
-</code></pre>
-
-<h4>
-<a name="multi-stage" class="anchor" href="#multi-stage"><span class="octicon octicon-link"></span></a>Multi Stage</h4>
-
-<p>Project structure.</p>
-
-<pre><code>/ your/capistrano/project/
-|-- config
-|   |-- deploy
-|   |   |-- dev.rb
-|   |   |-- stg.rb
-|   |   `-- prod.rb
-|   `-- deploy.rb
-`-- Capfile
-</code></pre>
-
-<p>Also, the file name under config/deploy are should be matched in  <code>set :stages</code></p>
-
-<ul>
-<li>
-<p>/your/capistrano/project/<strong><em>Capfile</em></strong></p>
-
-<pre><code>require 'capitomcat'
-require 'capistrano/ext/multistage'
-
-# Application Stage Section
-set :stages, %w(dev stg prod)
-
-# User section
-set   :user, "stg"
-set   :password, "password"
-set   :tomcat_user, "tomcat"
-set   :tomcat_cmd_user, "root"
-
-# Local file section
-set   :local_war_file, "/tmp/app.war"
-set   :context_template_file, "./template/context.xml.erb"
-
-# Remote setting section
-set   :context_name, "app"
-set   :remote_docBase, "/tmp/test/earl/war/abc.war"
-set   :remote_context_file, "/tmp/test/tomcat/conf/Catalina/localhost/app.xml"
-set   :remote_tomcat_cmd, "/tmp/test/etc/init.d/tomcat7"
-set   :remote_tomcat_work_dir, "/opt/tomcat/work/Catalina/localhost/app"
-</code></pre>
-</li>
-<li>
-<p>/your/capistrano/project/<strong><em>config/deploy/dev.rb</em></strong></p>
-
-<pre><code># Application host section for DEV
-role  :app, "dev-host-1", "dev-host-2"
-</code></pre>
-</li>
-<li>
-<p>/your/capistrano/project/<strong><em>config/deploy/stg.rb</em></strong></p>
-
-<pre><code># Application host section for stg
-role  :app, "stg-host-1", "stg-host-2"
-</code></pre>
-</li>
-<li>
-<p>/your/capistrano/project/<strong><em>config/deploy/prod.rb</em></strong></p>
-
-<pre><code># Application host section for Production
-role  :app, "prod-host-1", "prod-host-2"
-</code></pre>
-</li>
-</ul><h2>
-<a name="available-tasks" class="anchor" href="#available-tasks"><span class="octicon octicon-link"></span></a>Available Tasks</h2>
-
-<p>To get a list of all capistrano tasks, run <code>cap -T</code> with user password:</p>
-
-<pre>
-cap capitomcat:cleanWorkDir  # Cleaning-up Tomcat work directory
-cap capitomcat:start         # Start capitomcat.
-cap capitomcat:stop          # Stop capitomcat.
-cap capitomcat:updateContext # Update and upload context file
-cap capitomcat:uploadWar     # Upload WAR file
-</pre>
-
-<h3>
-<a name="capitomcatcleanworkdir" class="anchor" href="#capitomcatcleanworkdir"><span class="octicon octicon-link"></span></a>capitomcat:cleanWorkDir</h3>
-
-<p>This Task will remove Application's Tomcat work directory. Please make sure you should start/restart Tomcat after this task has executed.</p>
-
-<h3>
-<a name="capitomcatstart" class="anchor" href="#capitomcatstart"><span class="octicon octicon-link"></span></a>capitomcat:start</h3>
-
-<p>This Task will start your Tomcat server using <code>:remote_tomcat_cmd</code> command.
-If you have <code>set :remote_tomcat_cmd, '/etc/init.d/tomcat7'</code> and <code>set :tomcat_cmd_user, 'root'</code> in your Capfile or deploy.rb file then the Task will execute <code>sudo -p &lt;:password&gt; -u root /etc/init.d/tomcat7 start</code> commnad on your remote servers which are setted in <code>role :app</code>.</p>
-
-<h3>
-<a name="capitomcatstop" class="anchor" href="#capitomcatstop"><span class="octicon octicon-link"></span></a>capitomcat:stop</h3>
-
-<p>This Task will stop your Tomcat server using <code>:remote_tomcat_cmd</code> command.
-If you have <code>set :remote_tomcat_cmd, '/user/local/tomcat7/bin/catalina.sh'</code> and <code>set :tomcat_cmd_user, 'tomcat'</code> in your Capfile or deploy.rb file then the Task will execute <code>sudo -p &lt;:password&gt; -u tomcat /user/local/tomcat7/bin/catalina.sh stop</code> commnad on your remote servers which are setted in <code>role :app</code>.</p>
-
-<h3>
-<a name="capitomcatupdatecontext" class="anchor" href="#capitomcatupdatecontext"><span class="octicon octicon-link"></span></a>capitomcat:updateContext</h3>
-
-<p>This Task will generate context file from your context template file. and Upload the generated context file to <code>:remote_context_file</code></p>
-
-<h3>
-<a name="capitomcatuploadwar" class="anchor" href="#capitomcatuploadwar"><span class="octicon octicon-link"></span></a>capitomcat:uploadWar</h3>
-
-<p>This Task will upload the <code>:local_war_file</code> to <code>:remote_docBase</code> </p>
+<div class="highlight highlight-sh"><pre><span class="nv">$ </span>gem install capitomcat
+</pre></div>
 
 <h2>
-<a name="usage" class="anchor" href="#usage"><span class="octicon octicon-link"></span></a>Usage</h2>
-
-<p>To use capitomcat gem, You need to create your own Capistrano script.
-You can create Capistrano project structure and default files from scratch to run <code>capify .</code></p>
-
-<pre><code>$ mkdir -p /your/capistrano/project
-$ cd /your/capistrano/project
-$ capify .
-$ tree
-
-/ your/capistrano/project/
-|-- config
-|   `-- deploy.rb
-`-- Capfile
-</code></pre>
-
-<p>add settings into your Capfile or deploy.rb file. and you can execute capitomcat recipe like this.</p>
-
-<pre><code>$ cap capitomcat:stop
-</code></pre>
-
-<p>Also, you can combine tasks as a one task by creating new task inside the your Capfile or deploy.rb file.</p>
-
-<pre><code>require 'capitomcat'
-
-desc "Release Task for myjob"
-namespace :myapp do
-  task :release, :roles =&gt; :app do
-    capitomcat.stop
-    capitomcat.uploadWar
-    capitomcat.updateContext
-    capitomcat.cleanWorkDir
-    capitomcat.start
-  end
-end
-</code></pre>
+<a name="configuration" class="anchor" href="#configuration"><span class="octicon octicon-link"></span></a>Configuration</h2>
 
 <h3>
-<a name="execute-tasks-serially" class="anchor" href="#execute-tasks-serially"><span class="octicon octicon-link"></span></a>Execute tasks serially</h3>
+<a name="role-configuration" class="anchor" href="#role-configuration"><span class="octicon octicon-link"></span></a>Role Configuration</h3>
 
-<p>Capistrano performs the task parallel, So in the above case, if you have multiple server each task will be performed for each servers.</p>
-
-<pre><code># host1, host2
-
-stop ==&gt; host1
-stop ==&gt; host2
-
-uploadWar ==&gt; host1
-uploadWar ==&gt; host2
-
-...
-</code></pre>
-
-<p>if you do perform release like below, use serial_task function.</p>
-
-<pre><code># host1, host2
-
-stop ==&gt; host1
-uploadWar ==&gt; host1
-updateContext ==&gt; host1
-start ==&gt; host1
-
-stop ==&gt; host2
-uploadWar ==&gt; host2
-updateContext ==&gt; host2
-start ==&gt; host2
-</code></pre>
-
-<pre><code>require 'capitomcat'
-
-desc "Release Task for myjob"
-namespace :myapp do
-  task :release, :roles =&gt; :app do
-    serial_task do
-      capitomcat.stop
-      capitomcat.uploadWar
-      capitomcat.updateContext
-      capitomcat.cleanWorkDir
-      capitomcat.start
-    end
-  end
-end
-</code></pre>
+<pre>
+role :app, %w{deploy@dev01 deploy@dev02}
+</pre>
 
 <h3>
-<a name="perform-multistage-task" class="anchor" href="#perform-multistage-task"><span class="octicon octicon-link"></span></a>Perform multistage task</h3>
+<a name="required-configuration-for-capitomcat" class="anchor" href="#required-configuration-for-capitomcat"><span class="octicon octicon-link"></span></a>Required configuration for Capitomcat</h3>
 
-<p>If you have multistage setting, you can perform the task as like below.</p>
+<pre>
+set :use_sudo, true
 
-<pre><code>cap prod myapp:release
-</code></pre>
+# Remote Tomcat server setting section
+set :tomcat_user, 'tomcat7'
+set :tomcat_user_group, 'tomcat7'
+set :tomcat_port, '8080'
+set :tomcat_cmd, '/etc/init.d/tomcat7'
+set :use_tomcat_user_cmd, false
+set :tomcat_war_file, '/var/app/war/test-web.war'
+set :tomcat_context_path, '/test-web'
+set :tomcat_context_file, '/var/lib/tomcat7/conf/Catalina/localhost/test-web.xml'
+set :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
 
-<p>♥For more details, please refer to example projects.♥</p>
+# Deploy setting section
+set :local_war_file, '/tmp/test-web.war'
+set :context_template_file, File.expand_path('../templates/context.xml.erb', __FILE__).to_s
+set :use_context_update, false
+set :use_parallel, false
+set :use_context_update, false
+</pre>
 
-<hr />
-<ul style="margin:0; padding: 0; list-style: none;">
-  <!-- Facebook share button -->
-  <li style="margin:0; padding: 0; float: left;"><div class="fb-like" data-href="http://capitomcat.sunggun.me" data-layout="button_count" data-action="like" data-show-faces="true" data-share="true"></div></li>
-  <!-- Google+ share button -->
-  <li style="padding: 0 3px 0 5px; float: left;">
-	  <!-- Place this tag where you want the share button to render. -->
-	  <div class="g-plus" data-action="share" data-annotation="bubble"></div>
+<h3>
+<a name="task" class="anchor" href="#task"><span class="octicon octicon-link"></span></a>Task</h3>
 
-	  <!-- Place this tag after the last share tag. -->
-	  <script type="text/javascript">
-	    (function() {
-	      var po = document.createElement('script'); po.type = 'text/javascript'; po.async = true;
-	      po.src = 'https://apis.google.com/js/platform.js';
-	      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(po, s);
-	    })();
-	  </script>
-  </li>
-  <!-- Twitter share button -->
-  <li><a href="https://twitter.com/share" class="twitter-share-button" data-url="http://capitomcat.sunggun.me" data-hashtags="capitomcat" data-dnt="true">Tweet</a></li>
-</ul>
-<p style="clear:both;"/>
-<!-- DISQUS -->
-<div id="disqus_thread"></div>
-    <script type="text/javascript">
-        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-        var disqus_shortname = 'capitomcat'; // required: replace example with your forum shortname
+<p>You can get task name of Capitomcat by run <code>cap -T</code></p>
 
-        /* * * DON'T EDIT BELOW THIS LINE * * */
-        (function() {
-            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-        })();
-    </script>
-    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-<!-- / DISQUS -->
+<pre>
+cap capitomcat:deploy              # Capitomcat Recipe for Tomcat web application deployment
+</pre>
+
+<h3>
+<a name="documentation-is-still-working-on" class="anchor" href="#documentation-is-still-working-on"><span class="octicon octicon-link"></span></a><strong><em>Documentation is still working on...</em></strong>
+</h3>
+
+<p>♥For more details, please refer to example recipes.♥</p>
+
+<h2>
+<a name="license" class="anchor" href="#license"><span class="octicon octicon-link"></span></a>License</h2>
+
+<pre>
+Copyright 2014 Sunggun Yu
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+</pre>
       </section>
     </div>
     <footer>
@@ -448,19 +182,6 @@ end
       <p>Hosted on GitHub Pages &mdash; Theme by <a href="https://github.com/orderedlist">orderedlist</a></p>
     </footer>
     <!--[if !IE]><script>fixScale(document);</script><![endif]-->
-
-	<script type="text/javascript">
-	    /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-	    var disqus_shortname = 'capitomcat'; // required: replace example with your forum shortname
-
-	    /* * * DON'T EDIT BELOW THIS LINE * * */
-	    (function () {
-	        var s = document.createElement('script'); s.async = true;
-	        s.type = 'text/javascript';
-	        s.src = '//' + disqus_shortname + '.disqus.com/count.js';
-	        (document.getElementsByTagName('HEAD')[0] || document.getElementsByTagName('BODY')[0]).appendChild(s);
-	    }());
-	    </script>
-
+    
   </body>
 </html>
