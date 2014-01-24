@@ -22,5 +22,4 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_dependency 'capistrano', '~> 3.0', '>= 3.0.1'
-  s.add_dependency 'capistrano-bundler', '~> 1.1', '>= 1.1.1'
 end
