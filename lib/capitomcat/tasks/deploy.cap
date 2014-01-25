@@ -111,8 +111,7 @@ namespace :capitomcat do
       # Move tmp WAR file to actual path
       change_owner_and_move(tmp_war_file, tomcat_war_file, tomcat_user, tomcat_user_group)
     else
-      error("Local WAR file does not existing. : #{local_war_file}")
-      exit(1)
+      raise("Local WAR file does not existing. : #{local_war_file}")
     end
   end
 
@@ -122,8 +121,7 @@ namespace :capitomcat do
     context_template_file = fetch(:context_template_file)
 
     if !File.exists?(context_template_file)
-      error('Context template file does not existing.')
-      exit(1)
+      raise('Context template file does not existing.')
     end
 
     # local variables for erb file
