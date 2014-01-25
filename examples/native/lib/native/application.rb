@@ -68,8 +68,8 @@ class Application
     set :use_parallel, false
 
     capistrano = Capistrano::Application.new
-    capistrano.add_import('../lib/native/tasks/tomcat_webapp.cap')
-    capistrano.load_imports
+    Rake.application.add_import('../lib/native/tasks/tomcat_webapp.cap')
+    Rake.application.load_imports
     capistrano.invoke('tomcat:deploy')
   end
 end
