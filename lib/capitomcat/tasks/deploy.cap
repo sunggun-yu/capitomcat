@@ -185,28 +185,28 @@ namespace :capitomcat do
     end
   end
 
-  # Change owner and move file
-  # @param [String] file
-  # @param [String] destination file name with its path
-  # @param [String] user
-  # @param [String] group
-  def change_owner_and_move (file, destination, user, group)
-    # Change file's owner
-    puts user
-    execute :sudo, :chown, "#{user}:#{group}", file
+  # Copy the file and remove after copy
+  def clean_after_copy (file, destination, sudo_user)
+    # Change permission
+    execute :chmod, '666', file
 
-    # Move file to destination
+    # Copy file to destination
     target_dir = File.dirname(destination)
     if test "[ -d #{target_dir} ]"
       within target_dir do
-        execute :sudo, '-u', user, :mv, '-f', file, destination
+        execute :sudo, '-u', sudo_user, :cp, file, destination
       end
     else
       warn("Target directory is not existing. Capitomcat will try mkdir for target directory. : #{target_dir}")
-      execute :sudo, '-u', user, :mkdir, '-p', target_dir
+      execute :sudo, '-u', sudo_user, :mkdir, '-p', target_dir
       within(target_dir) do
-        execute :sudo, '-u', user, :mv, '-f', file, destination
+        execute :sudo, '-u', sudo_user, :cp, file, destination
       end
+    end
+    if test "[ -e #{file} ]"
+      execute :rm, '-f', file
+    else
+      warn('File to remove is not existing.')
     end
   end
 
