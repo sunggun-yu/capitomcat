@@ -1,4 +1,5 @@
 require 'capistrano'
+require 'sshkit/backends/netssh'
 
 # Author:: Sunggun Yu
 
@@ -37,6 +38,7 @@ namespace :capitomcat do
 
         info 'Stop Tomcat'
         stop_tomcat
+        check_tomcat_stopped
 
         info 'Update Context'
         upload_context_file
@@ -50,6 +52,7 @@ namespace :capitomcat do
       else
         info 'Stop Tomcat'
         stop_tomcat
+        check_tomcat_stopped
 
         info 'Upload WAR file'
         upload_war_file
@@ -68,25 +71,47 @@ namespace :capitomcat do
   def start_tomcat
     # local variables
     tomcat_cmd = fetch(:tomcat_cmd)
-
-    puts capture(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} start")
+    execute(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} start")
   end
 
-  # Check status whether started
+  # Check status whether Tomcat started
   def check_tomcat_started
     # local variables
     tomcat_port = fetch(:tomcat_port)
+    _times = 0
+    begin
+      _times = _times + 1
+      info("Check and wait until Tomcat starting up ... #{_times}")
+      _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
+      info (_netstat)
+      sleep(1)
+    end until _times > 180 || (_netstat != nil && _netstat.to_s.length > 1)
+    if _times > 180
+      raise 'Starting Tomcat has failed - timed out'
+    end
+  end
 
-    execute "for i in {0..180}; do echo \"Waiting for Tomcat to start\"; if [ \"\" != \"$(netstat -an | grep #{tomcat_port})\" ]; then break; fi; sleep 30; done"
-    puts capture("netstat -an | grep #{tomcat_port}")
+  # Check status whether Tomcat stopped
+  def check_tomcat_stopped
+    # local variables
+    tomcat_port = fetch(:tomcat_port)
+    _times = 0
+    begin
+      _times = _times + 1
+      info("Check and wait until Tomcat stopping ... #{_times}")
+      _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
+      sleep(1)
+    end until _times > 180 || _netstat == nil || _netstat.to_s.length == 0
+    if _times > 180
+      raise 'Stopping Tomcat has failed - timed out'
+    end
   end
 
   # Stop Tomcat server
   def stop_tomcat
     # local variables
     tomcat_cmd = fetch(:tomcat_cmd)
-
-    puts capture(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} stop")
+    execute(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} stop")
   end
 
   # Upload the WAR file
