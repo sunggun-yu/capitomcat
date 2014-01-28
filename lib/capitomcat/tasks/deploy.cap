@@ -1,4 +1,5 @@
 require 'capistrano'
+require 'sshkit/backends/netssh'
 
 # Author:: Sunggun Yu
 
@@ -37,6 +38,7 @@ namespace :capitomcat do
 
         info 'Stop Tomcat'
         stop_tomcat
+        check_tomcat_stopped
 
         info 'Update Context'
         upload_context_file
@@ -50,6 +52,7 @@ namespace :capitomcat do
       else
         info 'Stop Tomcat'
         stop_tomcat
+        check_tomcat_stopped
 
         info 'Upload WAR file'
         upload_war_file
@@ -68,25 +71,47 @@ namespace :capitomcat do
   def start_tomcat
     # local variables
     tomcat_cmd = fetch(:tomcat_cmd)
-
-    puts capture(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} start")
+    execute(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} start")
   end
 
-  # Check status whether started
+  # Check status whether Tomcat started
   def check_tomcat_started
     # local variables
     tomcat_port = fetch(:tomcat_port)
+    _times = 0
+    begin
+      _times = _times + 1
+      info("Check and wait until Tomcat starting up ... #{_times}")
+      _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
+      info (_netstat)
+      sleep(1)
+    end until _times > 180 || (_netstat != nil && _netstat.to_s.length > 1)
+    if _times > 180
+      raise 'Starting Tomcat has failed - timed out'
+    end
+  end
 
-    execute "for i in {0..180}; do echo \"Waiting for Tomcat to start\"; if [ \"\" != \"$(netstat -an | grep #{tomcat_port})\" ]; then break; fi; sleep 30; done"
-    puts capture("netstat -an | grep #{tomcat_port}")
+  # Check status whether Tomcat stopped
+  def check_tomcat_stopped
+    # local variables
+    tomcat_port = fetch(:tomcat_port)
+    _times = 0
+    begin
+      _times = _times + 1
+      info("Check and wait until Tomcat stopping ... #{_times}")
+      _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
+      sleep(1)
+    end until _times > 180 || _netstat == nil || _netstat.to_s.length == 0
+    if _times > 180
+      raise 'Stopping Tomcat has failed - timed out'
+    end
   end
 
   # Stop Tomcat server
   def stop_tomcat
     # local variables
     tomcat_cmd = fetch(:tomcat_cmd)
-
-    puts capture(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} stop")
+    execute(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} stop")
   end
 
   # Upload the WAR file
@@ -96,20 +121,19 @@ namespace :capitomcat do
     local_war_file = fetch(:local_war_file)
     tomcat_war_file = fetch(:tomcat_war_file)
     tomcat_user = fetch(:tomcat_user)
-    tomcat_user_group = fetch(:tomcat_user_group)
 
     if File.exists?(local_war_file)
       # Setup file name
       temp_dir = Pathname.new('/tmp')
       temp_file = File.basename(tomcat_war_file)
       tmp_war_file = temp_dir.join(temp_file)
-
+      tmp_war_file = timestamp_filename(tmp_war_file)
       # Clean remote file before uploading
       remove_file_if_exist(upload_user, tmp_war_file)
       # Upload WAR file into temp dir
       upload! local_war_file, tmp_war_file
       # Move tmp WAR file to actual path
-      change_owner_and_move(tmp_war_file, tomcat_war_file, tomcat_user, tomcat_user_group)
+      clean_after_copy(tmp_war_file, tomcat_war_file, tomcat_user)
     else
       raise("Local WAR file does not existing. : #{local_war_file}")
     end
@@ -140,14 +164,14 @@ namespace :capitomcat do
     upload_user = fetch(:user)
     tomcat_context_file = fetch(:tomcat_context_file)
     tomcat_user = fetch(:tomcat_user)
-    tomcat_user_group = fetch(:tomcat_user_group)
     context_template = get_context_template
 
     temp_upload_file = '/tmp/' + File.basename(tomcat_context_file)
+    temp_upload_file = timestamp_filename(temp_upload_file)
     remove_file_if_exist upload_user, temp_upload_file
     contents = StringIO.new(context_template)
     upload! contents, temp_upload_file
-    change_owner_and_move(temp_upload_file, tomcat_context_file, tomcat_user, tomcat_user_group)
+    clean_after_copy(temp_upload_file, tomcat_context_file, tomcat_user)
   end
 
   # Clean-up work directory
@@ -185,28 +209,28 @@ namespace :capitomcat do
     end
   end
 
-  # Change owner and move file
-  # @param [String] file
-  # @param [String] destination file name with its path
-  # @param [String] user
-  # @param [String] group
-  def change_owner_and_move (file, destination, user, group)
-    # Change file's owner
-    puts user
-    execute :sudo, :chown, "#{user}:#{group}", file
+  # Copy the file and remove after copy
+  def clean_after_copy (file, destination, sudo_user)
+    # Change permission
+    execute :chmod, '666', file
 
-    # Move file to destination
+    # Copy file to destination
     target_dir = File.dirname(destination)
     if test "[ -d #{target_dir} ]"
       within target_dir do
-        execute :sudo, '-u', user, :mv, '-f', file, destination
+        execute :sudo, '-u', sudo_user, :cp, file, destination
       end
     else
       warn("Target directory is not existing. Capitomcat will try mkdir for target directory. : #{target_dir}")
-      execute :sudo, '-u', user, :mkdir, '-p', target_dir
+      execute :sudo, '-u', sudo_user, :mkdir, '-p', target_dir
       within(target_dir) do
-        execute :sudo, '-u', user, :mv, '-f', file, destination
+        execute :sudo, '-u', sudo_user, :cp, file, destination
       end
+    end
+    if test "[ -e #{file} ]"
+      execute :rm, '-f', file
+    else
+      warn('File to remove is not existing.')
     end
   end
 
@@ -220,5 +244,14 @@ namespace :capitomcat do
     else
       warn('Target file to remove is not existing.')
     end
+  end
+
+  # Add timestamp to filename
+  def timestamp_filename(file)
+    dir = File.dirname(file)
+    base = File.basename(file, '.*')
+    time = Time.now.to_i
+    ext = File.extname(file)
+    File.join(dir, "#{base}-#{time}#{ext}")
   end
 end
