@@ -96,20 +96,19 @@ namespace :capitomcat do
     local_war_file = fetch(:local_war_file)
     tomcat_war_file = fetch(:tomcat_war_file)
     tomcat_user = fetch(:tomcat_user)
-    tomcat_user_group = fetch(:tomcat_user_group)
 
     if File.exists?(local_war_file)
       # Setup file name
       temp_dir = Pathname.new('/tmp')
       temp_file = File.basename(tomcat_war_file)
       tmp_war_file = temp_dir.join(temp_file)
-
+      tmp_war_file = timestamp_filename(tmp_war_file)
       # Clean remote file before uploading
       remove_file_if_exist(upload_user, tmp_war_file)
       # Upload WAR file into temp dir
       upload! local_war_file, tmp_war_file
       # Move tmp WAR file to actual path
-      change_owner_and_move(tmp_war_file, tomcat_war_file, tomcat_user, tomcat_user_group)
+      clean_after_copy(tmp_war_file, tomcat_war_file, tomcat_user)
     else
       raise("Local WAR file does not existing. : #{local_war_file}")
     end
@@ -140,14 +139,14 @@ namespace :capitomcat do
     upload_user = fetch(:user)
     tomcat_context_file = fetch(:tomcat_context_file)
     tomcat_user = fetch(:tomcat_user)
-    tomcat_user_group = fetch(:tomcat_user_group)
     context_template = get_context_template
 
     temp_upload_file = '/tmp/' + File.basename(tomcat_context_file)
+    temp_upload_file = timestamp_filename(temp_upload_file)
     remove_file_if_exist upload_user, temp_upload_file
     contents = StringIO.new(context_template)
     upload! contents, temp_upload_file
-    change_owner_and_move(temp_upload_file, tomcat_context_file, tomcat_user, tomcat_user_group)
+    clean_after_copy(temp_upload_file, tomcat_context_file, tomcat_user)
   end
 
   # Clean-up work directory
@@ -220,5 +219,14 @@ namespace :capitomcat do
     else
       warn('Target file to remove is not existing.')
     end
+  end
+
+  # Add timestamp to filename
+  def timestamp_filename(file)
+    dir = File.dirname(file)
+    base = File.basename(file, '.*')
+    time = Time.now.to_i
+    ext = File.extname(file)
+    File.join(dir, "#{base}-#{time}#{ext}")
   end
 end
