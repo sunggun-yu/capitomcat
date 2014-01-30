@@ -1,9 +1,18 @@
 # Changes
+[1.1.2]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.2
 [1.1.1]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.1
 [1.1.0]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.0
 [1.0.1]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.0.1
 [1.0.0]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.0.0
 [0.0.3]: https://github.com/sunggun-yu/capitomcat/releases/tag/v0.0.3
+
+## [v1.1.2][1.1.2]
+ * Bug Fix : Some Tomcat startup script need to be executed in background #6 (https://github.com/sunggun-yu/capitomcat/issues/6)
+    * Start/stop command has modified to be executed in the background.
+    * Adding sleep time after command is executed.
+ * Bug Fix : SSHKIT test and within not properly working at CentOS5.x #7 (https://github.com/sunggun-yu/capitomcat/issues/7)
+    * Removing within method
+    * Adding checking method for remote directory and file existing.
 
 ## [v1.1.1][1.1.1]
  * File uploading strategy changing.
