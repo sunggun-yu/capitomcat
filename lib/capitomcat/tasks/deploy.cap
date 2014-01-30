@@ -70,8 +70,7 @@ namespace :capitomcat do
   # Start Tomcat server
   def start_tomcat
     # local variables
-    tomcat_cmd = fetch(:tomcat_cmd)
-    execute(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} start")
+    execute_tomcat_cmd('start', 3)
   end
 
   # Check status whether Tomcat started
@@ -109,9 +108,7 @@ namespace :capitomcat do
 
   # Stop Tomcat server
   def stop_tomcat
-    # local variables
-    tomcat_cmd = fetch(:tomcat_cmd)
-    execute(:sudo, get_sudo_user_tomcat_cmd, "#{tomcat_cmd} stop")
+    execute_tomcat_cmd('stop', 3)
   end
 
   # Upload the WAR file
@@ -253,5 +250,13 @@ namespace :capitomcat do
     time = Time.now.to_i
     ext = File.extname(file)
     File.join(dir, "#{base}-#{time}#{ext}")
+  end
+
+  # Execute the Tomcat command
+  # it executes the Tomcat command in background. and sleeps for several sec after executing.
+  def execute_tomcat_cmd(arg, sleep)
+    # local variables
+    tomcat_cmd = fetch(:tomcat_cmd)
+    execute("echo `nohup sudo #{get_sudo_user_tomcat_cmd} #{tomcat_cmd} #{arg}& > /dev/null 2>&1` && sleep #{sleep}")
   end
 end
