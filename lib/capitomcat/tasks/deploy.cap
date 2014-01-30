@@ -177,12 +177,10 @@ namespace :capitomcat do
     tomcat_work_dir = fetch(:tomcat_work_dir)
     tomcat_user = fetch(:tomcat_user)
 
-    if test "[ -d #{tomcat_work_dir} ]"
-      within(tomcat_work_dir) do
-        execute :sudo, '- u', tomcat_user, 'rm -rf', tomcat_work_dir
-      end
+    if dir_exist?(tomcat_work_dir)
+      execute :sudo, '- u', tomcat_user, 'rm -rf', tomcat_work_dir
     else
-      warn('Tomcat work directory does not existing.')
+      warn('Tomcat work directory does not exist.')
     end
   end
 
@@ -213,21 +211,17 @@ namespace :capitomcat do
 
     # Copy file to destination
     target_dir = File.dirname(destination)
-    if test "[ -d #{target_dir} ]"
-      within target_dir do
-        execute :sudo, '-u', sudo_user, :cp, file, destination
-      end
+    if dir_exist?(target_dir)
+      execute :sudo, '-u', sudo_user, :cp, file, destination
     else
-      warn("Target directory is not existing. Capitomcat will try mkdir for target directory. : #{target_dir}")
+      warn("Target directory does not exist. Capitomcat will try to mkdir for target directory. : #{target_dir}")
       execute :sudo, '-u', sudo_user, :mkdir, '-p', target_dir
-      within(target_dir) do
-        execute :sudo, '-u', sudo_user, :cp, file, destination
-      end
+      execute :sudo, '-u', sudo_user, :cp, file, destination
     end
-    if test "[ -e #{file} ]"
+    if file_exist?(file)
       execute :rm, '-f', file
     else
-      warn('File to remove is not existing.')
+      warn("The target file to remove does not exist : #{file}")
     end
   end
 
@@ -235,11 +229,11 @@ namespace :capitomcat do
   # @param [String] user
   # @param [String] file
   def remove_file_if_exist (user, file)
-    if test "[ -e #{file} ]"
+    if file_exist?(file)
       execute :sudo, :chown, user, file
       execute :rm, '-f', file
     else
-      warn('Target file to remove is not existing.')
+      warn("The target file to remove does not exist : #{file}")
     end
   end
 
@@ -258,5 +252,25 @@ namespace :capitomcat do
     # local variables
     tomcat_cmd = fetch(:tomcat_cmd)
     execute("echo `nohup sudo #{get_sudo_user_tomcat_cmd} #{tomcat_cmd} #{arg}& > /dev/null 2>&1` && sleep #{sleep}")
+  end
+
+  # Test if dir is existing
+  def dir_exist?(dir)
+    _test = capture("echo `if [ -d '#{dir}' ] ; then echo 'true' ; else echo 'false' ; fi`").to_s
+    if _test.eql?('true')
+      return true
+    else
+      return false
+    end
+  end
+
+  # Test if file is existing
+  def file_exist?(file)
+    _test = capture("echo `if [ -e '#{file}' ] ; then echo 'true' ; else echo 'false' ; fi`").to_s
+    if _test.eql?('true')
+      return true
+    else
+      return false
+    end
   end
 end
