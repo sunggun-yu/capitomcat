@@ -70,7 +70,7 @@ namespace :capitomcat do
   # Start Tomcat server
   def start_tomcat
     # local variables
-    execute_tomcat_cmd('start', 3)
+    execute_tomcat_cmd('start', 1)
   end
 
   # Check status whether Tomcat started
@@ -108,7 +108,7 @@ namespace :capitomcat do
 
   # Stop Tomcat server
   def stop_tomcat
-    execute_tomcat_cmd('stop', 3)
+    execute_tomcat_cmd('stop', 1)
   end
 
   # Upload the WAR file
