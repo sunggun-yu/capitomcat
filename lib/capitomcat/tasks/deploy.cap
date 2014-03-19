@@ -178,7 +178,7 @@ namespace :capitomcat do
     tomcat_user = fetch(:tomcat_user)
 
     if dir_exist?(tomcat_work_dir)
-      execute :sudo, '- u', tomcat_user, 'rm -rf', tomcat_work_dir
+      execute :sudo, '-u', tomcat_user, 'rm -rf', tomcat_work_dir
     else
       warn('Tomcat work directory does not exist.')
     end
