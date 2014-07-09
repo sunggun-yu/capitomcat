@@ -192,7 +192,7 @@ namespace :capitomcat do
     # local variables
     tomcat_user = fetch(:tomcat_user)
     tomcat_war_file = fetch(:tomcat_war_file)
-    tomcat_unpacked_dir = tomcat_war_file.slice('.war')
+    tomcat_unpacked_dir = tomcat_war_file.sub('.war', '')
 
     if dir_exist?(tomcat_unpacked_dir)
       execute :sudo, '-u', tomcat_user, 'rm -rf', tomcat_unpacked_dir
