@@ -46,6 +46,9 @@ namespace :capitomcat do
         info 'Clean Work directory'
         cleanup_work_dir
 
+        info 'Clean Unpacked WAR directory'
+        cleanup_unpacked_dir
+
         info 'Start Tomcat'
         start_tomcat
         check_tomcat_started
@@ -181,6 +184,20 @@ namespace :capitomcat do
       execute :sudo, '-u', tomcat_user, 'rm -rf', tomcat_work_dir
     else
       warn('Tomcat work directory does not exist.')
+    end
+  end
+  
+  # Clean-up work directory
+  def cleanup_unpacked_dir
+    # local variables
+    tomcat_user = fetch(:tomcat_user)
+    tomcat_war_file = fetch(:tomcat_war_file)
+    tomcat_unpacked_dir = tomcat_war_file.slice('.war')
+
+    if dir_exist?(tomcat_unpacked_dir)
+      execute :sudo, '-u', tomcat_user, 'rm -rf', tomcat_unpacked_dir
+    else
+      warn('Tomcat unpacked directory does not exist.')
     end
   end
 
