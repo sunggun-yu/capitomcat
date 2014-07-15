@@ -57,6 +57,9 @@ namespace :capitomcat do
         stop_tomcat
         check_tomcat_stopped
 
+        info 'Clean Unpacked WAR directory'
+        cleanup_unpacked_dir
+
         info 'Upload WAR file'
         upload_war_file
 

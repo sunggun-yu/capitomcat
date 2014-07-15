@@ -17,7 +17,7 @@ set :tomcat_user_group, 'tomcat7'
 set :tomcat_port, '8080'
 set :tomcat_cmd, '/etc/init.d/tomcat7'
 set :use_tomcat_user_cmd, false
-set :tomcat_war_file, '/var/app/war/test-web.war'
+set :tomcat_war_file, '/var/lib/tomcat7/webapps/test-web.war'
 set :tomcat_context_path, '/test-web'
 set :tomcat_context_file, '/var/lib/tomcat7/conf/Catalina/localhost/test-web.xml'
 set :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
