@@ -1,4 +1,5 @@
 # Changes
+[1.1.4]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.4
 [1.1.3]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.3
 [1.1.2]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.2
 [1.1.1]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.1
@@ -6,6 +7,11 @@
 [1.0.1]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.0.1
 [1.0.0]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.0.0
 [0.0.3]: https://github.com/sunggun-yu/capitomcat/releases/tag/v0.0.3
+
+## [v1.1.4][1.1.4]
+ * Adding "cleanup unpacked WAR directory" function before tomcat starting.
+    * Unpacked WAR directory is not refreshed. eventually, Tomcat doesn't provide latest changes in new WAR file by this issue.
+    * Thanks to @jwcarman
 
 ## [v1.1.3][1.1.3]
  * Bug Fix : There was space between "-" and "u" at Tomcat work directory cleaning task.
