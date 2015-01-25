@@ -76,7 +76,7 @@ namespace :capitomcat do
   # Start Tomcat server
   def start_tomcat
     # local variables
-    execute_tomcat_cmd('start', 1)
+    execute_tomcat_cmd('start')
   end
 
   # Check status whether Tomcat started
@@ -114,7 +114,7 @@ namespace :capitomcat do
 
   # Stop Tomcat server
   def stop_tomcat
-    execute_tomcat_cmd('stop', 1)
+    execute_tomcat_cmd('stop')
   end
 
   # Upload the WAR file
@@ -268,10 +268,10 @@ namespace :capitomcat do
 
   # Execute the Tomcat command
   # it executes the Tomcat command in background. and sleeps for several sec after executing.
-  def execute_tomcat_cmd(arg, sleep)
+  def execute_tomcat_cmd(arg)
     # local variables
     tomcat_cmd = fetch(:tomcat_cmd)
-    execute("echo `nohup sudo #{get_sudo_user_tomcat_cmd} #{tomcat_cmd} #{arg}& > /dev/null 2>&1` && sleep #{sleep}")
+    execute :sudo, '-u', get_sudo_user_tomcat_cmd, tomcat_cmd, arg
   end
 
   # Test if dir is existing
