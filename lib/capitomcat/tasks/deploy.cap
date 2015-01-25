@@ -271,7 +271,7 @@ namespace :capitomcat do
   def execute_tomcat_cmd(arg)
     # local variables
     tomcat_cmd = fetch(:tomcat_cmd)
-    execute :sudo, '-u', get_sudo_user_tomcat_cmd, tomcat_cmd, arg
+    execute :sudo, get_sudo_user_tomcat_cmd, tomcat_cmd, arg
   end
 
   # Test if dir is existing
