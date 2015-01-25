@@ -21,5 +21,5 @@ Gem::Specification.new do |s|
   s.files         = `git ls-files`.split("\n")
   s.require_paths = ["lib"]
 
-  s.add_dependency 'capistrano', '>= 3.1.0'
+  s.add_dependency 'capistrano', '~> 3.3', '>= 3.3.5'
 end
