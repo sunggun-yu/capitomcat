@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.authors     = ['Sunggun Yu']
   s.email       = ['sunggun.dev@gmail.com']
   s.licenses    = ['Apache 2.0']
-  s.date        = %q{2014-03-19}
+  s.date        = %q{2015-01-25}
   s.homepage    = 'http://sunggun-yu.github.io/capitomcat/'
   s.summary     = %q{Capistrano 3 recipe for Tomcat web application deployment}
   s.description = %q{Capitomcat is the Capistrano 3 recipe for Tomcat web application deployment.}

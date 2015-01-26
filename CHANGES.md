@@ -1,4 +1,5 @@
 # Changes
+[1.2.0]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.2.0
 [1.1.4]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.4
 [1.1.3]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.3
 [1.1.2]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.2
@@ -7,6 +8,13 @@
 [1.0.1]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.0.1
 [1.0.0]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.0.0
 [0.0.3]: https://github.com/sunggun-yu/capitomcat/releases/tag/v0.0.3
+
+## [v1.2.0][1.2.0]
+ * Updating Capistrano dependency version.
+ * Removing background executing of tomcat command. also, sleep time has removed accordingly.
+    * PTY option is not properly applied.
+    * In actually, executing tomcat command in background is not effective. It is all about Tomcat starting command. In most of case, Tomcat init.d command use `/bin/su -p -s /bin/bash -l $TOMCAT_USER $TOMCAT_HOME/bin/startup.sh`. however, In some OS, such like CentOS/Oracle 5.9 and 6.5, tomcat command process were killed right after the ssh session has closed. To prevent this issue, init.d script should be modified like, `su $TOMCAT_USER -c $TOMCAT_HOME/bin/startup.sh`
+ * Adding attribute for Tomcat command waiting timeout. Changing netstat checking logic.
 
 ## [v1.1.4][1.1.4]
  * Adding "cleanup unpacked WAR directory" function before tomcat starting.
