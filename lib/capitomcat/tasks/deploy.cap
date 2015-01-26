@@ -23,6 +23,8 @@ namespace :capitomcat do
     set   :tomcat_context_path, '/test-web'
     set   :tomcat_context_file, '/var/lib/tomcat7/conf/Catalina/localhost/test-web.xml'
     set   :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
+    set   :tomcat_cmd_wait_start, 10 # Second
+    set   :tomcat_cmd_wait_stop, 5 # Second
 
     # Deploy setting section
     set   :local_war_file, '/tmp/test-web.war'
@@ -82,33 +84,48 @@ namespace :capitomcat do
   # Check status whether Tomcat started
   def check_tomcat_started
     # local variables
-    tomcat_port = fetch(:tomcat_port)
+    tomcat_cmd_wait_start = if fetch(:tomcat_cmd_wait_start).to_s.length > 0
+                              fetch(:tomcat_cmd_wait_start).to_i
+                            else
+                              30 # Default is 30 sec
+                            end
     _times = 0
-    begin
-      _times = _times + 1
-      info("Check and wait until Tomcat starting up ... #{_times}")
-      _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
-      info (_netstat)
+    until check_netstat_tomcat_port do
+      if _times >= tomcat_cmd_wait_start
+        raise 'Tomcat is not started.'
+      end
+      _times += 1
+      info("Check and wait until starting Tomcat ... #{_times}")
       sleep(1)
-    end until _times > 180 || (_netstat != nil && _netstat.to_s.length > 1)
-    if _times > 180
-      raise 'Starting Tomcat has failed - timed out'
     end
   end
 
   # Check status whether Tomcat stopped
   def check_tomcat_stopped
     # local variables
-    tomcat_port = fetch(:tomcat_port)
+    tomcat_cmd_wait_stop = if fetch(:tomcat_cmd_wait_stop).to_s.length > 0
+                              fetch(:tomcat_cmd_wait_stop).to_i
+                            else
+                              5 # Default is 5 sec
+                            end
     _times = 0
-    begin
-      _times = _times + 1
+    until !check_netstat_tomcat_port do
+      if _times >= tomcat_cmd_wait_stop
+        raise 'Tomcat is not stopped.'
+      end
+      _times += 1
       info("Check and wait until Tomcat stopping ... #{_times}")
-      _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
       sleep(1)
-    end until _times > 180 || _netstat == nil || _netstat.to_s.length == 0
-    if _times > 180
-      raise 'Stopping Tomcat has failed - timed out'
+    end
+  end
+
+  # Do netstat -an | grep ${tomcat_port} | grep "LISTEN" to check whether tomcat port is up or not. return when it is up.
+  def check_netstat_tomcat_port
+    tomcat_port = fetch(:tomcat_port)
+    _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
+    info (_netstat)
+    if _netstat.to_s.length > 1
+      return true
     end
   end
 
