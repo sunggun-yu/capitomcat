@@ -292,7 +292,7 @@ namespace :capitomcat do
     use_background = if fetch(:use_background_tomcat_cmd).to_s.length > 0
                        fetch(:use_background_tomcat_cmd).to_bool
                      else
-                       false # Default is use background command which force not attaching tty(tty=UNKNOWN)
+                       true # Default is use background command which force not attaching tty(tty=UNKNOWN)
                      end
     tomcat_cmd = fetch(:tomcat_cmd)
     if use_background
