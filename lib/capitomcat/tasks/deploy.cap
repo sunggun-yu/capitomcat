@@ -25,6 +25,7 @@ namespace :capitomcat do
     set   :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
     set   :tomcat_cmd_wait_start, 10 # Second
     set   :tomcat_cmd_wait_stop, 5 # Second
+    set   :use_background_tomcat_cmd, false # Use normal execute command as default
 
     # Deploy setting section
     set   :local_war_file, '/tmp/test-web.war'
@@ -287,8 +288,18 @@ namespace :capitomcat do
   # it executes the Tomcat command in background. and sleeps for several sec after executing.
   def execute_tomcat_cmd(arg)
     # local variables
+    puts "use_background_tomcat_cmd --> #{fetch(:use_background_tomcat_cmd)}"
+    use_background = if fetch(:use_background_tomcat_cmd).to_s.length > 0
+                       fetch(:use_background_tomcat_cmd).to_bool
+                     else
+                       false # Default is use background command which force not attaching tty(tty=UNKNOWN)
+                     end
     tomcat_cmd = fetch(:tomcat_cmd)
-    execute :sudo, get_sudo_user_tomcat_cmd, tomcat_cmd, arg
+    if use_background
+      execute("echo `nohup sudo #{get_sudo_user_tomcat_cmd} #{tomcat_cmd} #{arg}& > /dev/null 2>&1` && sleep 1")
+    else
+      execute :sudo, get_sudo_user_tomcat_cmd, tomcat_cmd, arg
+    end
   end
 
   # Test if dir is existing
