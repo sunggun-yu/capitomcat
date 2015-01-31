@@ -1,4 +1,5 @@
 # Changes
+[1.2.1]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.2.1
 [1.2.0]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.2.0
 [1.1.4]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.4
 [1.1.3]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.1.3
@@ -8,6 +9,11 @@
 [1.0.1]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.0.1
 [1.0.0]: https://github.com/sunggun-yu/capitomcat/releases/tag/v1.0.0
 [0.0.3]: https://github.com/sunggun-yu/capitomcat/releases/tag/v0.0.3
+
+## [v1.2.1][1.2.1]
+ * Revert back the executing tomcat command in background. gives choice option whether use background or not
+   * It really hard to know which OS is work with pty true/false for tomcat start script. it depends.... please refer to http://capistranorb.com/documentation/faq/why-does-something-work-in-my-ssh-session-but-not-in-capistrano/
+   * Some of the OS only works with background script. ex) CentOS 5.6
 
 ## [v1.2.0][1.2.0]
  * Updating Capistrano dependency version.
