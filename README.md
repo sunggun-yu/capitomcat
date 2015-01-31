@@ -76,6 +76,9 @@ set :tomcat_war_file, '/var/app/war/test-web.war'
 set :tomcat_context_path, '/test-web'
 set :tomcat_context_file, '/var/lib/tomcat7/conf/Catalina/localhost/test-web.xml'
 set :tomcat_work_dir, '/var/lib/tomcat7/work/Catalina/localhost/test-web'
+set :tomcat_cmd_wait_start, 10 # Second
+set :tomcat_cmd_wait_stop, 5 # Second
+set :use_background_tomcat_cmd, false # Use normal execute command as default
 
 # Deploy setting section
 set :local_war_file, '/tmp/test-web.war'
