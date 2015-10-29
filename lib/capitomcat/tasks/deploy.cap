@@ -33,58 +33,67 @@ namespace :capitomcat do
     set   :use_parallel, true
     set   :use_context_update, true
   DESC
+
   task :deploy do
     on roles(:app), in: get_parallelism, wait: 5 do |hosts|
-      if fetch(:use_context_update) then
-        info 'Upload WAR file'
-        upload_war_file
-
-        info 'Stop Tomcat'
-        stop_tomcat
-        check_tomcat_stopped
-
-        info 'Update Context'
-        upload_context_file
-
-        info 'Clean Work directory'
-        cleanup_work_dir
-
-        info 'Clean Unpacked WAR directory'
-        cleanup_unpacked_dir
-
-        info 'Start Tomcat'
-        start_tomcat
-        check_tomcat_started
+      if fetch(:local_war_file).is_a?(Array) and fetch(:tomcat_war_file).is_a?(Array)
+        deploy_war(fetch(:local_war_file), fetch(:tomcat_war_file))
+      elsif fetch(:local_war_file).is_a?(String) and fetch(:tomcat_war_file).is_a?(String)
+        deploy_war(fetch(:local_war_file), fetch(:tomcat_war_file))
       else
-        info 'Stop Tomcat'
-        stop_tomcat
-        check_tomcat_stopped
-
-        info 'Clean Unpacked WAR directory'
-        cleanup_unpacked_dir
-
-        info 'Upload WAR file'
-        upload_war_file
-
-        info 'Clean Work directory'
-        cleanup_work_dir
-
-        info 'Start Tomcat'
-        start_tomcat
-        check_tomcat_started
+        raise("War inputs are mismatched")
       end
+    end
+  end
+
+  def deploy_war(local_war_file, tomcat_war_file)
+    if fetch(:use_context_update) then
+      info 'Upload WAR file'
+      upload_war_file(local_war_file, tomcat_war_file)
+
+      info 'Stop Tomcat'
+      stop_tomcat
+      check_tomcat_stopped
+
+      info 'Update Context'
+      upload_context_file
+
+      info 'Clean Work directory'
+      cleanup_work_dir
+
+      info 'Clean Unpacked WAR directory'
+      cleanup_unpacked_dir(tomcat_war_file)
+
+      info 'Start Tomcat'
+      start_tomcat
+      check_tomcat_started
+    else
+      info 'Stop Tomcat'
+      stop_tomcat
+      check_tomcat_stopped
+
+      info 'Clean Unpacked WAR directory'
+      cleanup_unpacked_dir(tomcat_war_file)
+
+      info 'Upload WAR file'
+      upload_war_file(local_war_file, tomcat_war_file)
+
+      info 'Clean Work directory'
+      cleanup_work_dir
+
+      info 'Start Tomcat'
+      start_tomcat
+      check_tomcat_started
     end
   end
 
   # Start Tomcat server
   def start_tomcat
-    # local variables
     execute_tomcat_cmd('start')
   end
 
   # Check status whether Tomcat started
   def check_tomcat_started
-    # local variables
     tomcat_cmd_wait_start = if fetch(:tomcat_cmd_wait_start).to_s.length > 0
                               fetch(:tomcat_cmd_wait_start).to_i
                             else
@@ -103,7 +112,6 @@ namespace :capitomcat do
 
   # Check status whether Tomcat stopped
   def check_tomcat_stopped
-    # local variables
     tomcat_cmd_wait_stop = if fetch(:tomcat_cmd_wait_stop).to_s.length > 0
                               fetch(:tomcat_cmd_wait_stop).to_i
                             else
@@ -136,11 +144,8 @@ namespace :capitomcat do
   end
 
   # Upload the WAR file
-  def upload_war_file
-    # local variables
+  def upload_war_file(local_war_file, tomcat_war_file)
     upload_user = fetch(:user)
-    local_war_file = fetch(:local_war_file)
-    tomcat_war_file = fetch(:tomcat_war_file)
     tomcat_user = fetch(:tomcat_user)
 
     if File.exists?(local_war_file)
@@ -161,17 +166,11 @@ namespace :capitomcat do
   end
 
   # Generate context.xml file string from ERB template file and bindings
-  def get_context_template
-    # local variables
-    context_template_file = fetch(:context_template_file)
+  def get_context_template(context_template_file, tomcat_war_file)
+    raise('Context template file does not existing.') if !File.exists?(context_template_file)
 
-    if !File.exists?(context_template_file)
-      raise('Context template file does not existing.')
-    end
-
-    # local variables for erb file
+  for erb file
     tomcat_context_path = fetch(:tomcat_context_path)
-    tomcat_war_file = fetch(:tomcat_war_file)
     info ("#{tomcat_context_path}, #{tomcat_war_file}")
 
     template_file = File.read(File.expand_path(context_template_file, __FILE__))
@@ -180,12 +179,11 @@ namespace :capitomcat do
   end
 
   # Upload context template string to remote server
-  def upload_context_file
-    # local variables
+  def upload_context_file(tomcat_war_file)
     upload_user = fetch(:user)
     tomcat_context_file = fetch(:tomcat_context_file)
     tomcat_user = fetch(:tomcat_user)
-    context_template = get_context_template
+    context_template = get_context_template(tomcat_context_file, tomcat_war_file)
 
     temp_upload_file = '/tmp/' + File.basename(tomcat_context_file)
     temp_upload_file = timestamp_filename(temp_upload_file)
@@ -197,7 +195,6 @@ namespace :capitomcat do
 
   # Clean-up work directory
   def cleanup_work_dir
-    # local variables
     tomcat_work_dir = fetch(:tomcat_work_dir)
     tomcat_user = fetch(:tomcat_user)
 
@@ -207,10 +204,9 @@ namespace :capitomcat do
       warn('Tomcat work directory does not exist.')
     end
   end
-  
+
   # Clean-up work directory
-  def cleanup_unpacked_dir
-    # local variables
+  def cleanup_unpacked_dir(tomcat_war_file)
     tomcat_user = fetch(:tomcat_user)
     tomcat_war_file = fetch(:tomcat_war_file)
     tomcat_unpacked_dir = tomcat_war_file.sub('.war', '')
@@ -287,7 +283,6 @@ namespace :capitomcat do
   # Execute the Tomcat command
   # it executes the Tomcat command in background. and sleeps for several sec after executing.
   def execute_tomcat_cmd(arg)
-    # local variables
     puts "use_background_tomcat_cmd --> #{fetch(:use_background_tomcat_cmd)}"
     use_background = if fetch(:use_background_tomcat_cmd).to_s.length > 0
                        fetch(:use_background_tomcat_cmd).to_bool
@@ -302,23 +297,15 @@ namespace :capitomcat do
     end
   end
 
-  # Test if dir is existing
   def dir_exist?(dir)
     _test = capture("echo `if [ -d '#{dir}' ] ; then echo 'true' ; else echo 'false' ; fi`").to_s
-    if _test.eql?('true')
-      return true
-    else
-      return false
-    end
+
+    _test.eql?('true')
   end
 
-  # Test if file is existing
   def file_exist?(file)
     _test = capture("echo `if [ -e '#{file}' ] ; then echo 'true' ; else echo 'false' ; fi`").to_s
-    if _test.eql?('true')
-      return true
-    else
-      return false
-    end
+
+    _test.eql?('true')
   end
 end
