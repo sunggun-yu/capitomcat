@@ -40,7 +40,7 @@ namespace :capitomcat do
       tomcat_war_file = fetch(:tomcat_war_file)
 
       if local_war_file.is_a?(Array) and tomcat_war_file.is_a?(Array)
-        raise("Local and Remote files must match")
+        raise("Local and Remote files must match") if local_war_file.length != tomcat_war_file.length
 
         local_war_file.times do |i|
           deploy_war(local_war_file[i], tomcat_war_file[i])
