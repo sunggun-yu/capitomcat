@@ -176,13 +176,12 @@ namespace :capitomcat do
   def get_context_template(context_template_file, tomcat_war_file)
     raise('Context template file does not existing.') if !File.exists?(context_template_file)
 
-  for erb file
     tomcat_context_path = fetch(:tomcat_context_path)
     info ("#{tomcat_context_path}, #{tomcat_war_file}")
 
     template_file = File.read(File.expand_path(context_template_file, __FILE__))
     template = ERB.new(template_file)
-    return template.result(binding)
+    template.result(binding)
   end
 
   # Upload context template string to remote server
