@@ -42,8 +42,8 @@ namespace :capitomcat do
       if local_war_file.is_a?(Array) and tomcat_war_file.is_a?(Array)
         raise("Local and Remote files must match") if local_war_file.length != tomcat_war_file.length
 
-        local_war_file.times do |i|
-          deploy_war(local_war_file[i], tomcat_war_file[i])
+        local_war_file.each_with_index do |local_file, index|
+          deploy_war(local_file, tomcat_war_file[index])
         end
       elsif local_war_file.is_a?(String) and fetch(:tomcat_war_file).is_a?(String)
         deploy_war(local_war_file, tomcat_war_file)
