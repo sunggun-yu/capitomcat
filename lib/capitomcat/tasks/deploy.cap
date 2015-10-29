@@ -36,10 +36,17 @@ namespace :capitomcat do
 
   task :deploy do
     on roles(:app), in: get_parallelism, wait: 5 do |hosts|
-      if fetch(:local_war_file).is_a?(Array) and fetch(:tomcat_war_file).is_a?(Array)
-        deploy_war(fetch(:local_war_file), fetch(:tomcat_war_file))
-      elsif fetch(:local_war_file).is_a?(String) and fetch(:tomcat_war_file).is_a?(String)
-        deploy_war(fetch(:local_war_file), fetch(:tomcat_war_file))
+      local_war_file = fetch(:local_war_file)
+      tomcat_war_file = fetch(:tomcat_war_file)
+
+      if local_war_file.is_a?(Array) and tomcat_war_file.is_a?(Array)
+        raise("Local and Remote files must match")
+
+        local_war_file.times do |i|
+          deploy_war(local_war_file[i], tomcat_war_file[i])
+        end
+      elsif local_war_file.is_a?(String) and fetch(:tomcat_war_file).is_a?(String)
+        deploy_war(local_war_file, tomcat_war_file)
       else
         raise("War inputs are mismatched")
       end
@@ -208,7 +215,6 @@ namespace :capitomcat do
   # Clean-up work directory
   def cleanup_unpacked_dir(tomcat_war_file)
     tomcat_user = fetch(:tomcat_user)
-    tomcat_war_file = fetch(:tomcat_war_file)
     tomcat_unpacked_dir = tomcat_war_file.sub('.war', '')
 
     if dir_exist?(tomcat_unpacked_dir)
@@ -238,13 +244,11 @@ namespace :capitomcat do
     end
   end
 
-  # Copy the file and remove after copy
   def clean_after_copy (file, destination, sudo_user)
-    # Change permission
     execute :chmod, '666', file
 
-    # Copy file to destination
     target_dir = File.dirname(destination)
+
     if dir_exist?(target_dir)
       execute :sudo, '-u', sudo_user, :cp, file, destination
     else
@@ -252,10 +256,11 @@ namespace :capitomcat do
       execute :sudo, '-u', sudo_user, :mkdir, '-p', target_dir
       execute :sudo, '-u', sudo_user, :cp, file, destination
     end
+
     if file_exist?(file)
       execute :rm, '-f', file
     else
-      warn("The target file to remove does not exist : #{file}")
+      warn("The target file to remove does not exist: #{file}")
     end
   end
 
@@ -267,7 +272,7 @@ namespace :capitomcat do
       execute :sudo, :chown, user, file
       execute :rm, '-f', file
     else
-      warn("The target file to remove does not exist : #{file}")
+      warn("The target file to remove does not exist: #{file}")
     end
   end
 
@@ -290,6 +295,7 @@ namespace :capitomcat do
                        true # Default is use background command which force not attaching tty(tty=UNKNOWN)
                      end
     tomcat_cmd = fetch(:tomcat_cmd)
+
     if use_background
       execute("echo `nohup sudo #{get_sudo_user_tomcat_cmd} #{tomcat_cmd} #{arg}& > /dev/null 2>&1` && sleep 1")
     else
