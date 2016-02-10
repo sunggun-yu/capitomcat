@@ -50,6 +50,10 @@ namespace :capitomcat do
       else
         raise("War inputs are mismatched")
       end
+
+      info 'Start Tomcat'
+      start_tomcat
+      check_tomcat_started
     end
   end
 
@@ -70,10 +74,6 @@ namespace :capitomcat do
 
       info 'Clean Unpacked WAR directory'
       cleanup_unpacked_dir(tomcat_war_file)
-
-      info 'Start Tomcat'
-      start_tomcat
-      check_tomcat_started
     else
       info 'Stop Tomcat'
       stop_tomcat
@@ -87,10 +87,6 @@ namespace :capitomcat do
 
       info 'Clean Work directory'
       cleanup_work_dir
-
-      info 'Start Tomcat'
-      start_tomcat
-      check_tomcat_started
     end
   end
 
