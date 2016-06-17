@@ -39,23 +39,19 @@ namespace :capitomcat do
   task :deploy do
     set :elb_instance_registration_wait_seconds, 300
 
-    aws_elb_manager = Capitomcat::AwsElbManager.new(
-      access_key_id: fetch(:aws_access_key_id),
-      region: fetch(:aws_region),
-      secret_access_key: fetch(:aws_secret_access_key),
-      load_balancer_name: fetch(:load_balancer_name)
-    )
+    if elb_defined?
+      aws_elb_manager = Capitomcat::AwsElbManager.new(
+        access_key_id: fetch(:aws_access_key_id),
+        region: fetch(:aws_region),
+        secret_access_key: fetch(:aws_secret_access_key),
+        load_balancer_name: fetch(:load_balancer_name)
+      )
+    end
 
     on roles(:app), in: get_parallelism, wait: 5 do |hosts|
-      current_instance_id = hosts.properties.fetch(:instance_id)
-
-      aws_elb_manager.deregister_instance(current_instance_id)
-      info 'Waiting for instance to be deregistered from Loadbalancer'
-      wait_for_instance_state(
-        aws_elb_manager: aws_elb_manager,
-        instance_id: current_instance_id,
-        state: 'OutOfService'
-      )
+      if elb_defined?
+        deregister_instance(hosts.properties.fetch(:instance_id), aws_elb_manager)
+      end
 
       local_war_file = fetch(:local_war_file)
       tomcat_war_file = fetch(:tomcat_war_file)
@@ -76,13 +72,9 @@ namespace :capitomcat do
       start_tomcat
       check_tomcat_started
 
-      aws_elb_manager.register_instance(current_instance_id)
-      info 'Waiting for instance to be registered with Loadbalancer'
-      wait_for_instance_state(
-        aws_elb_manager: aws_elb_manager,
-        instance_id: current_instance_id,
-        state: 'InService'
-      )
+      if elb_defined?
+        register_instance(hosts.properties.fetch(:instance_id), aws_elb_manager)
+      end
     end
   end
 
@@ -353,5 +345,29 @@ namespace :capitomcat do
         raise "Instance: #{instance_id} not in #{instance_state} after #{count} seconds"
       end
     end until(instance_state == state)
+  end
+
+  def elb_defined?
+    !fetch(:load_balancer_name, nil).nil?
+  end
+
+  def deregister_instance(instance_id, aws_elb_manager)
+    aws_elb_manager.deregister_instance(instance_id)
+    info 'Waiting for instance to be deregistered from Loadbalancer'
+    wait_for_instance_state(
+      aws_elb_manager: aws_elb_manager,
+      instance_id: instance_id,
+      state: 'OutOfService'
+    )
+  end
+
+  def register_instance(instance_id, aws_elb_manager)
+    aws_elb_manager.register_instance(instance_id)
+    info 'Waiting for instance to be registered with Loadbalancer'
+    wait_for_instance_state(
+      aws_elb_manager: aws_elb_manager,
+      instance_id: instance_id,
+      state: 'InService'
+    )
   end
 end
