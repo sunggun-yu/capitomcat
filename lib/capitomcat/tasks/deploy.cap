@@ -1,5 +1,7 @@
 require 'capistrano'
+require 'aws-sdk'
 require 'sshkit/backends/netssh'
+require_relative '../aws_elb_manager'
 
 # Author:: Sunggun Yu
 
@@ -35,7 +37,26 @@ namespace :capitomcat do
   DESC
 
   task :deploy do
+    set :elb_instance_registration_wait_seconds, 300
+
+    aws_elb_manager = Capitomcat::AwsElbManager.new(
+      access_key_id: fetch(:aws_access_key_id),
+      region: fetch(:aws_region),
+      secret_access_key: fetch(:aws_secret_access_key),
+      load_balancer_name: fetch(:load_balancer_name)
+    )
+
     on roles(:app), in: get_parallelism, wait: 5 do |hosts|
+      current_instance_id = hosts.properties.fetch(:instance_id)
+
+      aws_elb_manager.deregister_instance(current_instance_id)
+      info 'Waiting for instance to be deregistered from Loadbalancer'
+      wait_for_instance_state(
+        aws_elb_manager: aws_elb_manager,
+        instance_id: current_instance_id,
+        state: 'OutOfService'
+      )
+
       local_war_file = fetch(:local_war_file)
       tomcat_war_file = fetch(:tomcat_war_file)
 
@@ -54,6 +75,14 @@ namespace :capitomcat do
       info 'Start Tomcat'
       start_tomcat
       check_tomcat_started
+
+      aws_elb_manager.register_instance(current_instance_id)
+      info 'Waiting for instance to be registered with Loadbalancer'
+      wait_for_instance_state(
+        aws_elb_manager: aws_elb_manager,
+        instance_id: current_instance_id,
+        state: 'InService'
+      )
     end
   end
 
@@ -308,5 +337,21 @@ namespace :capitomcat do
     _test = capture("echo `if [ -e '#{file}' ] ; then echo 'true' ; else echo 'false' ; fi`").to_s
 
     _test.eql?('true')
+  end
+
+  def wait_for_instance_state(instance_id:, state:, aws_elb_manager:)
+    count = 0
+
+    begin
+      instance_state = aws_elb_manager.instance_state(instance_id)
+
+      info "#{instance_id} state is: #{instance_state}"
+      sleep(1)
+      count += 1
+
+      if count >= fetch(:elb_instance_registration_wait_seconds)
+        raise "Instance: #{instance_id} not in #{instance_state} after #{count} seconds"
+      end
+    end until(instance_state == state)
   end
 end

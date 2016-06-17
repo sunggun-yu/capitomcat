@@ -1,8 +1,9 @@
-# Capitomcat
-[![Gem Version](https://badge.fury.io/rb/capitomcat.png)](http://badge.fury.io/rb/capitomcat)
+# Capitomcat-ELB
+Capitomcat-ELB is a library for deploying Tomcat applications, served behind AWS Elastic Loadbalancers.
+Capitomcat-ELB will perform a rolling restart on your application, de-registering the instances in sequence to avoid downtime.
 
-Capitomcat is library for creating Capistrano Tomcat recipe.
-Capitomcat includes basic tasks for Tomcat deployment. You can create easily your own Capistrano 3 recipe for Tomcat with Capitomcat.
+Originally forked from:
+ https://github.com/jenkinsci/capitomcat-plugin
 
 ##See Also
 ### Capitomcat Jenkins Plugin
@@ -36,7 +37,7 @@ Add your SSH key into `authorized_keys` file of `deploy` user on your remote ser
 Folowing NOPASSWD setting is required. please add following setting into your `/etc/sudoers` file.
 ```` sh
 %your_deploy_user_name ALL=NOPASSWD:/etc/init.d/tomcat7 <Your tomcat command>
-%your_deploy_user_name ALL=NOPASSWD: /bin/chown 
+%your_deploy_user_name ALL=NOPASSWD: /bin/chown
 %your_deploy_user_name ALL=(<your_tomcat_user> : <your_tomcat_user_group>) NOPASSWD: ALL
 ````
 
@@ -55,16 +56,32 @@ $ gem install capistrano -v 3.0.1
 ###Install Capitomcat
 ``` sh
 $ gem install capitomcat
-```	
+```
 
 ##Configuration
 ### Role Configuration
 <pre>
 role :app, %w{deploy@dev01 deploy@dev02}
 </pre>
+
+<pre>
+server fetch('deploy@dev01'),
+  ...
+  instance_id: 'ec2-instance-id',
+  ...
+end
+</pre>
+
 ### Required configuration for Capitomcat
 <pre>
 set :use_sudo, true
+
+# Loadbalancer config
+set :aws_access_key_id, 'XXXYYY'
+set :aws_region, 'eu-west-1'
+set :aws_secret_access_key, 'xxxyyyzzz'
+set :elb_instance_registration_wait_seconds, 300 #optional
+set :load_balancer_name, 'elb-name'
 
 # Remote Tomcat server setting section
 set :tomcat_user, 'tomcat7'
