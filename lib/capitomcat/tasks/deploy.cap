@@ -1,5 +1,7 @@
 require 'capistrano'
+require 'aws-sdk'
 require 'sshkit/backends/netssh'
+require_relative '../aws_elb_manager'
 
 # Author:: Sunggun Yu
 
@@ -33,65 +35,96 @@ namespace :capitomcat do
     set   :use_parallel, true
     set   :use_context_update, true
   DESC
+
   task :deploy do
+    set :elb_instance_registration_wait_seconds, 300
+
+    if elb_defined?
+      aws_elb_manager = Capitomcat::AwsElbManager.new(
+        access_key_id: fetch(:aws_access_key_id),
+        region: fetch(:aws_region),
+        secret_access_key: fetch(:aws_secret_access_key),
+        load_balancer_name: fetch(:load_balancer_name)
+      )
+    end
+
     on roles(:app), in: get_parallelism, wait: 5 do |hosts|
-      if fetch(:use_context_update) then
-        info 'Upload WAR file'
-        upload_war_file
-
-        info 'Stop Tomcat'
-        stop_tomcat
-        check_tomcat_stopped
-
-        info 'Update Context'
-        upload_context_file
-
-        info 'Clean Work directory'
-        cleanup_work_dir
-
-        info 'Clean Unpacked WAR directory'
-        cleanup_unpacked_dir
-
-        info 'Start Tomcat'
-        start_tomcat
-        check_tomcat_started
-      else
-        info 'Stop Tomcat'
-        stop_tomcat
-        check_tomcat_stopped
-
-        info 'Clean Unpacked WAR directory'
-        cleanup_unpacked_dir
-
-        info 'Upload WAR file'
-        upload_war_file
-
-        info 'Clean Work directory'
-        cleanup_work_dir
-
-        info 'Start Tomcat'
-        start_tomcat
-        check_tomcat_started
+      if elb_defined?
+        deregister_instance(hosts.properties.fetch(:instance_id), aws_elb_manager)
       end
+
+      local_war_file = fetch(:local_war_file)
+      tomcat_war_file = fetch(:tomcat_war_file)
+
+      if local_war_file.is_a?(Array) and tomcat_war_file.is_a?(Array)
+        raise("Local and Remote files must match") if local_war_file.length != tomcat_war_file.length
+
+        local_war_file.each_with_index do |local_file, index|
+          deploy_war(local_file, tomcat_war_file[index])
+        end
+      elsif local_war_file.is_a?(String) and fetch(:tomcat_war_file).is_a?(String)
+        deploy_war(local_war_file, tomcat_war_file)
+      else
+        raise("War inputs are mismatched")
+      end
+
+      info 'Start Tomcat'
+      start_tomcat
+      check_tomcat_started
+
+      if elb_defined?
+        register_instance(hosts.properties.fetch(:instance_id), aws_elb_manager)
+      end
+    end
+  end
+
+  def deploy_war(local_war_file, tomcat_war_file)
+    if fetch(:use_context_update) then
+      info 'Upload WAR file'
+      upload_war_file(local_war_file, tomcat_war_file)
+
+      info 'Stop Tomcat'
+      stop_tomcat
+      check_tomcat_stopped
+
+      info 'Update Context'
+      upload_context_file
+
+      info 'Clean Work directory'
+      cleanup_work_dir
+
+      info 'Clean Unpacked WAR directory'
+      cleanup_unpacked_dir(tomcat_war_file)
+    else
+      info 'Stop Tomcat'
+      stop_tomcat
+      check_tomcat_stopped
+
+      info 'Clean Unpacked WAR directory'
+      cleanup_unpacked_dir(tomcat_war_file)
+
+      info 'Upload WAR file'
+      upload_war_file(local_war_file, tomcat_war_file)
+
+      info 'Clean Work directory'
+      cleanup_work_dir
     end
   end
 
   # Start Tomcat server
   def start_tomcat
-    # local variables
     execute_tomcat_cmd('start')
   end
 
   # Check status whether Tomcat started
   def check_tomcat_started
-    # local variables
     tomcat_cmd_wait_start = if fetch(:tomcat_cmd_wait_start).to_s.length > 0
                               fetch(:tomcat_cmd_wait_start).to_i
                             else
                               30 # Default is 30 sec
                             end
     _times = 0
-    until check_netstat_tomcat_port do
+    until check_tomcat_responding do
       if _times >= tomcat_cmd_wait_start
         raise 'Tomcat is not started.'
       end
@@ -103,14 +136,13 @@ namespace :capitomcat do
 
   # Check status whether Tomcat stopped
   def check_tomcat_stopped
-    # local variables
     tomcat_cmd_wait_stop = if fetch(:tomcat_cmd_wait_stop).to_s.length > 0
                               fetch(:tomcat_cmd_wait_stop).to_i
                             else
                               5 # Default is 5 sec
                             end
     _times = 0
-    until !check_netstat_tomcat_port do
+    until !check_tomcat_responding do
       if _times >= tomcat_cmd_wait_stop
         raise 'Tomcat is not stopped.'
       end
@@ -120,14 +152,8 @@ namespace :capitomcat do
     end
   end
 
-  # Do netstat -an | grep ${tomcat_port} | grep "LISTEN" to check whether tomcat port is up or not. return when it is up.
-  def check_netstat_tomcat_port
-    tomcat_port = fetch(:tomcat_port)
-    _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
-    info (_netstat)
-    if _netstat.to_s.length > 1
-      return true
-    end
+  def check_tomcat_responding
+    test("curl -I 'http://127.0.0.1:#{tomcat_port}'")
   end
 
   # Stop Tomcat server
@@ -136,11 +162,8 @@ namespace :capitomcat do
   end
 
   # Upload the WAR file
-  def upload_war_file
-    # local variables
+  def upload_war_file(local_war_file, tomcat_war_file)
     upload_user = fetch(:user)
-    local_war_file = fetch(:local_war_file)
-    tomcat_war_file = fetch(:tomcat_war_file)
     tomcat_user = fetch(:tomcat_user)
 
     if File.exists?(local_war_file)
@@ -161,31 +184,23 @@ namespace :capitomcat do
   end
 
   # Generate context.xml file string from ERB template file and bindings
-  def get_context_template
-    # local variables
-    context_template_file = fetch(:context_template_file)
+  def get_context_template(context_template_file, tomcat_war_file)
+    raise('Context template file does not existing.') if !File.exists?(context_template_file)
 
-    if !File.exists?(context_template_file)
-      raise('Context template file does not existing.')
-    end
-
-    # local variables for erb file
     tomcat_context_path = fetch(:tomcat_context_path)
-    tomcat_war_file = fetch(:tomcat_war_file)
     info ("#{tomcat_context_path}, #{tomcat_war_file}")
 
     template_file = File.read(File.expand_path(context_template_file, __FILE__))
     template = ERB.new(template_file)
-    return template.result(binding)
+    template.result(binding)
   end
 
   # Upload context template string to remote server
-  def upload_context_file
-    # local variables
+  def upload_context_file(tomcat_war_file)
     upload_user = fetch(:user)
     tomcat_context_file = fetch(:tomcat_context_file)
     tomcat_user = fetch(:tomcat_user)
-    context_template = get_context_template
+    context_template = get_context_template(tomcat_context_file, tomcat_war_file)
 
     temp_upload_file = '/tmp/' + File.basename(tomcat_context_file)
     temp_upload_file = timestamp_filename(temp_upload_file)
@@ -197,7 +212,6 @@ namespace :capitomcat do
 
   # Clean-up work directory
   def cleanup_work_dir
-    # local variables
     tomcat_work_dir = fetch(:tomcat_work_dir)
     tomcat_user = fetch(:tomcat_user)
 
@@ -207,12 +221,10 @@ namespace :capitomcat do
       warn('Tomcat work directory does not exist.')
     end
   end
-  
+
   # Clean-up work directory
-  def cleanup_unpacked_dir
-    # local variables
+  def cleanup_unpacked_dir(tomcat_war_file)
     tomcat_user = fetch(:tomcat_user)
-    tomcat_war_file = fetch(:tomcat_war_file)
     tomcat_unpacked_dir = tomcat_war_file.sub('.war', '')
 
     if dir_exist?(tomcat_unpacked_dir)
@@ -242,13 +254,11 @@ namespace :capitomcat do
     end
   end
 
-  # Copy the file and remove after copy
   def clean_after_copy (file, destination, sudo_user)
-    # Change permission
     execute :chmod, '666', file
 
-    # Copy file to destination
     target_dir = File.dirname(destination)
+
     if dir_exist?(target_dir)
       execute :sudo, '-u', sudo_user, :cp, file, destination
     else
@@ -256,10 +266,11 @@ namespace :capitomcat do
       execute :sudo, '-u', sudo_user, :mkdir, '-p', target_dir
       execute :sudo, '-u', sudo_user, :cp, file, destination
     end
+
     if file_exist?(file)
       execute :rm, '-f', file
     else
-      warn("The target file to remove does not exist : #{file}")
+      warn("The target file to remove does not exist: #{file}")
     end
   end
 
@@ -271,7 +282,7 @@ namespace :capitomcat do
       execute :sudo, :chown, user, file
       execute :rm, '-f', file
     else
-      warn("The target file to remove does not exist : #{file}")
+      warn("The target file to remove does not exist: #{file}")
     end
   end
 
@@ -287,7 +298,6 @@ namespace :capitomcat do
   # Execute the Tomcat command
   # it executes the Tomcat command in background. and sleeps for several sec after executing.
   def execute_tomcat_cmd(arg)
-    # local variables
     puts "use_background_tomcat_cmd --> #{fetch(:use_background_tomcat_cmd)}"
     use_background = if fetch(:use_background_tomcat_cmd).to_s.length > 0
                        fetch(:use_background_tomcat_cmd).to_bool
@@ -295,6 +305,7 @@ namespace :capitomcat do
                        true # Default is use background command which force not attaching tty(tty=UNKNOWN)
                      end
     tomcat_cmd = fetch(:tomcat_cmd)
+
     if use_background
       execute("echo `nohup sudo #{get_sudo_user_tomcat_cmd} #{tomcat_cmd} #{arg}& > /dev/null 2>&1` && sleep 1")
     else
@@ -302,23 +313,55 @@ namespace :capitomcat do
     end
   end
 
-  # Test if dir is existing
   def dir_exist?(dir)
     _test = capture("echo `if [ -d '#{dir}' ] ; then echo 'true' ; else echo 'false' ; fi`").to_s
-    if _test.eql?('true')
-      return true
-    else
-      return false
-    end
+
+    _test.eql?('true')
   end
 
-  # Test if file is existing
   def file_exist?(file)
     _test = capture("echo `if [ -e '#{file}' ] ; then echo 'true' ; else echo 'false' ; fi`").to_s
-    if _test.eql?('true')
-      return true
-    else
-      return false
-    end
+
+    _test.eql?('true')
+  end
+
+  def wait_for_instance_state(instance_id:, state:, aws_elb_manager:)
+    count = 0
+
+    begin
+      instance_state = aws_elb_manager.instance_state(instance_id)
+
+      info "#{instance_id} state is: #{instance_state}"
+      sleep(1)
+      count += 1
+
+      if count >= fetch(:elb_instance_registration_wait_seconds)
+        raise "Instance: #{instance_id} not in #{instance_state} after #{count} seconds"
+      end
+    end until(instance_state == state)
+  end
+
+  def elb_defined?
+    !fetch(:load_balancer_name, nil).nil?
+  end
+
+  def deregister_instance(instance_id, aws_elb_manager)
+    aws_elb_manager.deregister_instance(instance_id)
+    info 'Waiting for instance to be deregistered from Loadbalancer'
+    wait_for_instance_state(
+      aws_elb_manager: aws_elb_manager,
+      instance_id: instance_id,
+      state: 'OutOfService'
+    )
+  end
+
+  def register_instance(instance_id, aws_elb_manager)
+    aws_elb_manager.register_instance(instance_id)
+    info 'Waiting for instance to be registered with Loadbalancer'
+    wait_for_instance_state(
+      aws_elb_manager: aws_elb_manager,
+      instance_id: instance_id,
+      state: 'InService'
+    )
   end
 end
