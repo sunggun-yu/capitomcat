@@ -124,7 +124,7 @@ namespace :capitomcat do
                               30 # Default is 30 sec
                             end
     _times = 0
-    until check_netstat_tomcat_port do
+    until check_tomcat_responding do
       if _times >= tomcat_cmd_wait_start
         raise 'Tomcat is not started.'
       end
@@ -142,7 +142,7 @@ namespace :capitomcat do
                               5 # Default is 5 sec
                             end
     _times = 0
-    until !check_netstat_tomcat_port do
+    until !check_tomcat_responding do
       if _times >= tomcat_cmd_wait_stop
         raise 'Tomcat is not stopped.'
       end
@@ -152,14 +152,8 @@ namespace :capitomcat do
     end
   end
 
-  # Do netstat -an | grep ${tomcat_port} | grep "LISTEN" to check whether tomcat port is up or not. return when it is up.
-  def check_netstat_tomcat_port
-    tomcat_port = fetch(:tomcat_port)
-    _netstat = capture("netstat -an | grep \"#{tomcat_port}\" | grep \"LISTEN\" ; echo \"\"")
-    info (_netstat)
-    if _netstat.to_s.length > 1
-      return true
-    end
+  def check_tomcat_responding
+    test("curl -I 'http://127.0.0.1:#{tomcat_port}'")
   end
 
   # Stop Tomcat server
